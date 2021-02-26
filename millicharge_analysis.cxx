@@ -1,11 +1,24 @@
-bool gPlot = false;
+bool gPlot = false; // if you want to plot the histograms
+
+void plot_histo(TH1* h1, TString kMode, TString kNM, bool log = false)
+{
+  auto *c1 = new TCanvas();
+  h1->Draw("hist");
+  if ( log ) {
+    c1->SetLogy();
+  }
+  c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)h1->GetName()+".png");
+}
 
 void millicharge_analysis() {
-  Double_t kMCPmass   = 0.01;    // GeV
+  Double_t kMCPmass   = 0.04;   // GeV
   Double_t kMCPcharge = 0.01;   // electron charges
 
   TString kNM = "pi0";   // eta or pi0
   TString kMode = "fhc"; // fhc or rhc
+  
+  // ntuples can be found in manchester cluster
+  // /afs/hep.man.ac.uk/u/larellano/numi
   TFile *f = new TFile(kMode+"_"+kNM+"s_ntuple.root");
 
   TTreeReader reader(kMode+"_"+kNM+"s",f);
@@ -38,11 +51,11 @@ void millicharge_analysis() {
   Double_t fmM = sqrt(1.-(kMCPmass*kMCPmass)/(kNMmass*kNMmass));
   Double_t branching_ratio = kMCPcharge*kMCPcharge * 0.01174 * fmM;
 
-  cout << Form("mCP charge %.3f mass %.3f, branching ratio %e",kMCPcharge,kMCPmass,branching_ratio) << endl;
+
   
   int events = 0;
-  TLorentzVector _NM;
-  TLorentzVector _NM_pos;
+  TLorentzVector _NM;     // neutral meson
+  TLorentzVector _NM_pos; // neutral meson position 4vector
 
   TH1 * NMpx = new TH1F("NMpx",";P_{x} (GeV)",100,-20,20);
   TH1 * NMpy = new TH1F("NMpy",";P_{y} (GeV)",100,-20,20);
@@ -94,12 +107,13 @@ void millicharge_analysis() {
     TLorentzVector *MCP2 = dalitz.GetDecay(2);
     
     if ( events < 5 ) {
-      cout << Form("NM mass %.3f, mcp1 Px %.3f, decay weight %.4f",_NM.M(), MCP1->Px(),decay_weight) << endl;
+      cout <<
+	Form("Test event %i, NM mass %.3f, mcp1 Px %.3f, decay weight %.4f",
+	     events,_NM.M(), MCP1->Px(),decay_weight)
+	   << endl;
     }
-    // final weight
+    // final weight of mcps
     Double_t mcp_weight = *weight * decay_weight * branching_ratio;
-    // NMs that decay to mcp (all of them)
-    //Double_t NM_weight = *weight * branching_ratio;
     Double_t NM_weight = *weight;
     NMpx->Fill(_NM.Px(),NM_weight);
     NMpy->Fill(_NM.Py(),NM_weight);
@@ -139,64 +153,37 @@ void millicharge_analysis() {
     NMtheta2->Fill(th,NM_weight);
   }
 
-  auto * c1 = new TCanvas();
   TString hfilename;
 
+  // plots the histograms
   if ( gPlot == true ) {
-    NMpx->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)NMpx->GetName()+".png");
-    NMpy->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)NMpy->GetName()+".png");
-    NMpz->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)NMpz->GetName()+".png");
-    NMe->Draw("hist");
-    c1->SetLogy();
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)NMe->GetName()+".png");
-    NMtheta->Draw("hist");
-    c1->SetLogy(0);
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)NMtheta->GetName()+".png");
-    NMtheta2->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)NMtheta2->GetName()+".png");
+    plot_histo(NMpx,kMode,kNM);
+    plot_histo(NMpy,kMode,kNM);
+    plot_histo(NMpz,kMode,kNM);
+    plot_histo(NMpx,kMode,kNM,1);
+    plot_histo(NMtheta,kMode,kNM);
+    plot_histo(NMtheta2,kMode,kNM);
+
+    plot_histo(mcp1px,kMode,kNM);
+    plot_histo(mcp1py,kMode,kNM);
+    plot_histo(mcp1pz,kMode,kNM);
+    plot_histo(mcp1theta,kMode,kNM);
+    plot_histo(mcp1e,kMode,kNM,1);
+    plot_histo(mcp1thetadiff,kMode,kNM);
+
+    plot_histo(mcp2px,kMode,kNM);
+    plot_histo(mcp2py,kMode,kNM);
+    plot_histo(mcp2pz,kMode,kNM);
+    plot_histo(mcp2theta,kMode,kNM);
+    plot_histo(mcp2e,kMode,kNM,1);
+    plot_histo(mcp2thetadiff,kMode,kNM);
     
-    mcp1px->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp1px->GetName()+".png");
-    mcp1py->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp1py->GetName()+".png");
-    mcp1pz->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp1pz->GetName()+".png");
-    mcp1e->Draw("hist");
-    c1->SetLogy();
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp1e->GetName()+".png");
-    mcp1theta->Draw("hist");
-    c1->SetLogy(0);
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp1theta->GetName()+".png");
-    mcp1thetadiff->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp1thetadiff->GetName()+".png");
-    
-    mcp2px->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp2px->GetName()+".png");
-    mcp2py->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp2py->GetName()+".png");
-    mcp2pz->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp2pz->GetName()+".png");
-    mcp2e->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp2e->GetName()+".png");
-    mcp2theta->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp2theta->GetName()+".png");
-    mcp2thetadiff->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcp2thetadiff->GetName()+".png");
-    
-    gammathetadiff->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)gammathetadiff->GetName()+".png");
-    
-    traveldistance->Draw("hist");
-    c1->SetLogy();
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)traveldistance->GetName()+".png");
-    
-    mcpe_argo->Draw("hist");
-    c1->SaveAs("./img/"+kMode+"_"+kNM+"s_"+(TString)mcpe_argo->GetName()+".png");
+    plot_histo(gammathetadiff,kMode,kNM);
+    plot_histo(traveldistance,kMode,kNM,1);
+    plot_histo(mcpe_argo,kMode,kNM);
   }
-  
+
+  auto *c1 = new TCanvas();
   THStack *mcpe = new THStack("mcpe",";E (GeV);Entries #times BR #times TGen");
   mcp1e->SetFillColor(kBlue-6);
   mcp2e->SetFillColor(kBlue-4);
@@ -220,6 +207,10 @@ void millicharge_analysis() {
   double accepted_argo;
   accepted_argo = (10e20/500000.)*mcpe_argo->Integral();
   
-  cout << "NM_per_POT: " << NM_per_POT << endl;
+  //cout << "NM per_POT: " << NM_per_POT << endl;
+  cout << "-----------------" << endl;
+  cout << kNM+" decays to mCP" << endl;
+  cout << Form("mCP charge %.3f mass %.3f, branching ratio %e",
+	       kMCPcharge,kMCPmass,branching_ratio) << endl;
   cout << "accepted in argoneut: " << accepted_argo << endl;
 }
