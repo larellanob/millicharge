@@ -11,10 +11,10 @@ void plot_histo(TH1* h1, TString kMode, TString kNM, bool log = false)
 }
 
 void millicharge_analysis() {
-  Double_t kMCPmass   = 0.04;   // GeV
+  Double_t kMCPmass   = 0.25;   // GeV
   Double_t kMCPcharge = 0.01;   // electron charges
 
-  TString kNM = "pi0";   // eta or pi0
+  TString kNM = "eta";   // eta or pi0
   TString kMode = "fhc"; // fhc or rhc
   
   // ntuples can be found in manchester cluster
