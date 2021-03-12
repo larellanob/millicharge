@@ -1,9 +1,9 @@
 
-void DecayToMCP(TString meson ="pi0",TString horn = "fhc")
+void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
   // decay parameters
-  Double_t mCPmass   = 0.01;   // GeV
-  Double_t mCPcharge = 0.01;   // electron charges
+  //Double_t mCPmass   = 0.01;   // GeV
+  //Double_t mCPcharge = 0.01;   // electron charges
 
   TDatabasePDG pdg;
   double kMesonMass;
@@ -21,7 +21,7 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc")
   /////////
   // input
   TString mode = horn+"_"+meson+"s";
-  TFile *f = new TFile(mode+"_tree.root");
+  TFile *f = new TFile("sim/"+mode+"_tree.root");
   TTreeReader reader(mode,f);
   TTreeReaderValue<TLorentzVector> Mom4v(reader,"Mom");
   TTreeReaderValue<TLorentzVector> Pos4v(reader,"Pos");
@@ -43,10 +43,20 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc")
   // output
   //TString out_filename = "mCP_q_"+mCPcharge+"_m_"+mCPmass+"_"+mode+".root";
   TString out_filename
-    = Form("mCP_q_%0.3f_m_%0.3f_%s.root",mCPcharge,mCPmass,mode.Data());
+    = Form("sim/mCP_q_%0.3f_m_%0.3f_%s.root",mCPcharge,mCPmass,mode.Data());
   auto g = TFile::Open(out_filename,"recreate");
   //tree->SetDirectory(g); // remember this line!
 
+  TTree meta("Metadata","variables used");
+  meta.Branch("mCPmass",&mCPmass);
+  meta.Branch("mCPcharge",&mCPcharge);
+  meta.Branch("BranchingRatio",&branching_ratio);
+  meta.Fill();
+  meta.Write();
+    
+  
+
+  
   TLorentzVector mCPMom;
   TLorentzVector mCPPos;
   TTree * tree = new TTree("mCP",Form("Millicharged particles with mass %0.3f, charge %0.3f",mCPmass, mCPcharge));
@@ -66,7 +76,7 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc")
     events++;
     // for testing
     /*
-    if ( events < 300 ) {
+    if ( events < 5 ) {
       cout << "Meson Px: " << Mom4v->Px() << endl;
     } else break;
     */
