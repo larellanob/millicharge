@@ -1,3 +1,4 @@
+#include "CrossSection.cxx"
 
 void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
@@ -31,9 +32,14 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
 
   //////////
   // decay
+  // old cross section using eq.(1) arXiv:1806.03310v2
+  /*
   Double_t fmM = sqrt(1.-(mCPmass*mCPmass)/(kMesonMass*kMesonMass));
   Double_t branching_ratio = mCPcharge*mCPcharge * 0.01174 * fmM;
   cout << "Branching ratio " << branching_ratio << endl;
+  */
+  // new cross section using eq.(1) arXiv:1812.03998v2
+  Double_t cross_section = CrossSection(mCPmass,kMesonMass);
   if ( 2*mCPmass > kMesonMass ) {
     cout << "Forbidden decay, breaking" << endl;
     return;
@@ -41,32 +47,36 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
 
   //////////
   // output
-  //TString out_filename = "mCP_q_"+mCPcharge+"_m_"+mCPmass+"_"+mode+".root";
+
+  // output file
   TString out_filename
     = Form("sim/mCP_q_%0.3f_m_%0.3f_%s.root",mCPcharge,mCPmass,mode.Data());
   auto g = TFile::Open(out_filename,"recreate");
-  //tree->SetDirectory(g); // remember this line!
+  //tree->SetDirectory(g); // remember this line in the future!
 
+  // metadata tree
   TTree meta("Metadata","variables used");
   meta.Branch("mCPmass",&mCPmass);
   meta.Branch("mCPcharge",&mCPcharge);
-  meta.Branch("BranchingRatio",&branching_ratio);
+  meta.Branch("CrossSection",&cross_section);
+  meta.Branch("Mother",&meson);
+  meta.Branch("HornMode",&horn);
   meta.Fill();
   meta.Write();
-    
-  
 
-  
+  // main mcp particle tree
   TLorentzVector mCPMom;
   TLorentzVector mCPPos;
   TTree * tree = new TTree("mCP",Form("Millicharged particles with mass %0.3f, charge %0.3f",mCPmass, mCPcharge));
   tree->Branch("Mom",&mCPMom); // particle tlorentz4v
   tree->Branch("Pos",&mCPPos); // particle tlorentz4v
-  Float_t weight_final;    // weight from tgenphasespace
-  tree->Branch("Weight",&weight_final);
+  Float_t weight_meson;      // weight from the files
+  Float_t weight_decay;    // weight from tgenphasespace
+  tree->Branch("WeightMeson",&weight_meson);
+  tree->Branch("WeightDecay",&weight_decay);
   Int_t event;
   tree->Branch("Event",&event);
-
+  
 
   
   //////////////
@@ -80,28 +90,33 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
       cout << "Meson Px: " << Mom4v->Px() << endl;
     } else break;
     */
+
+    // generate decay
     Double_t masses[3] = { 0, mCPmass, mCPmass};
     TGenPhaseSpace decay;
     decay.SetDecay(*Mom4v, 3, masses);
-    Double_t weight_decay = decay.Generate();
+    weight_decay = decay.Generate();
 
+    // collect decay products
     TLorentzVector *gamma = decay.GetDecay(0);
     TLorentzVector *mCP1 = decay.GetDecay(1);
     TLorentzVector *mCP2 = decay.GetDecay(2);
-    
-    event = *evnt;
-    weight_final = (*weight_pi0)*(weight_decay)*(branching_ratio);
 
-    // fills two times, so two events, but variable event has event
-    // number
+    // fill metadata variables
+    event = *evnt;
+    weight_meson = *weight_pi0;
+
+    // fills two times, so two events for each decay
+    // but branch "event" keeps track of the event
     mCPMom = *mCP1;
-    mCPPos = *Pos4v;
+    mCPPos = *Pos4v; // both mCPs are generated in the same position,
+		     // so fill position once
     tree->Fill();
     mCPMom = *mCP2;
-    tree->Fill();
-
+    tree->Fill(); // fill again for the second mCP particle
   }
 
+  // finish message
   cout << "done " << events << " events" << endl;
   // write output
   g->Write();
