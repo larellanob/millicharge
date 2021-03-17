@@ -5,7 +5,7 @@
 // or the PhysRevD associated with it
 #include "CrossSection.cxx"
 
-Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
+Double_t AcceptedDUNE(TString fstr, int WEIGHT = 1)
 {
   // opens files containing mCP particles
   TFile *f  = new TFile(fstr);
@@ -52,8 +52,8 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
     // "cartesian acceptance"
     // closer 'rectangular detector' approximation
     // they use 975m as the distance to the target in the paper
-    Double_t xdev = atan2(0.235,975.); // x deviation
-    Double_t ydev = atan2(0.2  ,975.); // y deviation
+    Double_t xdev = atan2(0.5,1040.); // x deviation
+    Double_t ydev = atan2(0.5,1040.); // y deviation
 
     /*
     Double_t xdev = atan2(0.235,1033.); // x deviation
@@ -93,15 +93,15 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
   Double_t truexsec = CrossSection(*mass,mesonmass); // replace xsec with truexsec
   
   cout << Form("value: %.3f\nPOT normalized value: %.3f\n(old) xsec: %.7f\nsum weight decays: %.3f\nsum weight meson: %.3f",
-	       value1,(1e20/500000.)*value1/(sum_weight_decay*0.5),*xsec,sum_weight_decay/2.,sum_weight_meson/2.) << endl;
+	       value1,(1e21/500000.)*value1/(sum_weight_decay*0.5),*xsec,sum_weight_decay/2.,sum_weight_meson/2.) << endl;
 
   Double_t result;
   if ( WEIGHT == 1 ) {
-    result = (1e20/500000.)*(truexsec)*value1; // result uses truexsec
+    result = (1e21/500000.)*(truexsec)*value1; // result uses truexsec
   } else if ( WEIGHT == 2 ) {
-    result = (1e20/500000.)*(truexsec)*value2; // result uses truexsec
+    result = (1e21/500000.)*(truexsec)*value2; // result uses truexsec
   } else if ( WEIGHT == 3 ) {
-    result = (1e20/500000.)*(truexsec)*value3; // result uses truexsec
+    result = (1e21/500000.)*(truexsec)*value3; // result uses truexsec
   }
   cout << "geometrical acceptance " << value1/(events) << endl;
   cout << "result " << result << endl;

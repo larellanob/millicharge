@@ -8,12 +8,12 @@ void LatexText(Double_t x, Double_t y, int font, TString text)
   l2.DrawLatex(x,y,text);
 }
 
-void PlotAcceptedArgoneut(Bool_t runall = false)
+void PlotAcceptedArgoneut(int WEIGHT = 0)
 {
 
 
   // These are the datapoints obtained by Friday 12 March 2021. If
-  // script run with runall == true, it calculates the y points again
+  // script run with WEIGHT != 0, it calculates the y points again
   // using AcceptedArgoneut()
   Double_t xpi0decay[5] = { 0.01,
 			    0.02,
@@ -50,22 +50,43 @@ void PlotAcceptedArgoneut(Bool_t runall = false)
   };
     
 
-  if ( runall == true ) {
+  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 ) {
     for ( int i = 0; i < sizeof(xpi0decay)/sizeof(xpi0decay[0]); i++ ) {
       TString fstr = Form("sim/mCP_q_0.010_m_%0.3f_fhc_pi0s.root",xpi0decay[i]);
-      ypi0decay[i] = AcceptedArgoneut(fstr);
+      ypi0decay[i] = AcceptedArgoneut(fstr,WEIGHT);
     }
     for ( int i = 0; i < sizeof(xetadecay)/sizeof(xetadecay[0]); i++ ) {
       TString fstr = Form("sim/mCP_q_0.010_m_%0.3f_fhc_etas.root",xetadecay[i]);
-      yetadecay[i] = AcceptedArgoneut(fstr);
+      yetadecay[i] = AcceptedArgoneut(fstr,WEIGHT);
     }
   }
 
   TGraph *from_pi0decay = new TGraph(5,xpi0decay,ypi0decay);
   TGraph *from_etadecay = new TGraph(8,xetadecay,yetadecay);
-			    
-
+  from_pi0decay->SetName("pi0_decay");
+  from_etadecay->SetName("eta_decay");
   
+  TFile g;
+  TString outfile_graph_decay;
+  if ( WEIGHT == 1 ) {
+    outfile_graph_decay =
+      "hist/argoneut_acceptance_decay_weight1.root";
+  } else if ( WEIGHT == 2 ) {
+    outfile_graph_decay =
+      "hist/argoneut_acceptance_decay_weight2.root";
+  } else if ( WEIGHT == 3 ) {
+    outfile_graph_decay =
+      "hist/argoneut_acceptance_decay_weight3.root";
+  }
+
+
+  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 ) {
+    g.Open(outfile_graph_decay,"recreate");
+    from_pi0decay->Write();
+    from_etadecay->Write();
+  }
+  g.Close();
+
   ////////////////////////////////////////////////////////
   // data points obtained using WebPlotDigitizer
   // from fig. 2 (left) in arXiv:1902.03246v2
@@ -110,7 +131,33 @@ void PlotAcceptedArgoneut(Bool_t runall = false)
   
   TGraph *from_pi0 = new TGraph(6,xpi0,ypi0);
   TGraph *from_eta = new TGraph(9,xeta,yeta);
+  from_pi0->SetName("pi0_paper");
+  from_eta->SetName("eta_paper");
+  
+  TFile h("hist/argoneut_acceptance_decay_paper.root","recreate");
 
+  from_pi0->Write();
+  from_eta->Write();
+
+  h.Close();
+
+
+  TFile f2;
+  if ( WEIGHT == -1 ) {
+    f2.Open("hist/argoneut_acceptance_decay_weight1.root");
+    from_pi0decay = (TGraph*)gDirectory->Get("pi0_decay");
+    from_etadecay = (TGraph*)gDirectory->Get("eta_decay");
+  } else if ( WEIGHT == -2 ) {
+    f2.Open("hist/argoneut_acceptance_decay_weight2.root");
+    from_pi0decay = (TGraph*)gDirectory->Get("pi0_decay");
+    from_etadecay = (TGraph*)gDirectory->Get("eta_decay");
+  } else if ( WEIGHT == -3 ) {
+    f2.Open("hist/argoneut_acceptance_decay_weight3.root");
+    from_pi0decay = (TGraph*)gDirectory->Get("pi0_decay");
+    from_etadecay = (TGraph*)gDirectory->Get("eta_decay");
+  }
+      
+  
   auto *c1 = new TCanvas();
   c1->SetLogy();
   c1->SetLogx();
@@ -151,8 +198,10 @@ void PlotAcceptedArgoneut(Bool_t runall = false)
   gStyle->SetOptTitle(0);
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
-  
-  c1->SaveAs("img/AcceptedArgoneut.png");
+
+  TString weight_tstring;
+  weight_tstring.Form("%i",abs(WEIGHT));
+  c1->SaveAs("img/AcceptedArgoneut_"+weight_tstring+".png");
     
   /*
 ** pi0
