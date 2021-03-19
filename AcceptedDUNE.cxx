@@ -16,7 +16,7 @@ Double_t AcceptedDUNE(TString fstr, int WEIGHT = 1)
   TTreeReaderValue<Int_t> event(reader,"Event");
 
   // loops over events
-  int events = -1;
+  int events = 0;
   Double_t value1 = 0; // result stored here
   Double_t value2 = 0; // result stored here
   Double_t value3 = 0; // result stored here
@@ -102,6 +102,8 @@ Double_t AcceptedDUNE(TString fstr, int WEIGHT = 1)
     result = (1e21/500000.)*(truexsec)*value2; // result uses truexsec
   } else if ( WEIGHT == 3 ) {
     result = (1e21/500000.)*(truexsec)*value3; // result uses truexsec
+  } else if ( WEIGHT == 4 ) {
+    result = (1e21/500000.)*(truexsec)*value3*(events/sum_weight_decay); // result uses truexsec
   }
   cout << "geometrical acceptance " << value1/(events) << endl;
   cout << "result " << result << endl;

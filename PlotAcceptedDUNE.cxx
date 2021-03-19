@@ -48,7 +48,7 @@ void PlotAcceptedDUNE(int WEIGHT = 0)
     
 
 
-  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 ) {
+  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 || WEIGHT == 4 ) {
     for ( int i = 0; i < sizeof(xpi0decay)/sizeof(xpi0decay[0]); i++ ) {
       TString fstr = Form("sim/mCP_q_0.010_m_%0.3f_fhc_pi0s.root",xpi0decay[i]);
       ypi0decay[i] = AcceptedDUNE(fstr,WEIGHT);
@@ -77,10 +77,13 @@ void PlotAcceptedDUNE(int WEIGHT = 0)
   } else if ( WEIGHT == 3 ) {
     outfile_graph_decay =
       "hist/dune_acceptance_decay_weight3.root";
+  } else if ( WEIGHT == 4 ) {
+    outfile_graph_decay =
+      "hist/dune_acceptance_decay_weight4.root";
   }
 
 
-  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 ) {
+  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 || WEIGHT == 4 ) {
     g.Open(outfile_graph_decay,"recreate");
     from_pi0decay->Write();
     from_etadecay->Write();
@@ -186,8 +189,12 @@ void PlotAcceptedDUNE(int WEIGHT = 0)
     f2.Open("hist/dune_acceptance_decay_weight3.root");
     from_pi0decay = (TGraph*)gDirectory->Get("pi0_decay");
     from_etadecay = (TGraph*)gDirectory->Get("eta_decay");
+  } else if ( WEIGHT == -4 ) {
+    f2.Open("hist/dune_acceptance_decay_weight4.root");
+    from_pi0decay = (TGraph*)gDirectory->Get("pi0_decay");
+    from_etadecay = (TGraph*)gDirectory->Get("eta_decay");
   }
-  if ( WEIGHT == -1 || WEIGHT == -2 || WEIGHT == -3 ) {
+  if ( WEIGHT == -1 || WEIGHT == -2 || WEIGHT == -3 || WEIGHT == -4 ) {
     for ( int i = 0; i < 5; i++ ) {
       from_pi0decay->GetY()[i] *= 1e4;
     }
@@ -207,8 +214,8 @@ void PlotAcceptedDUNE(int WEIGHT = 0)
   
   from_eta->Draw();
   
-  from_eta->SetMinimum(1e0);
-  from_eta->SetMaximum(1e18);
+  from_eta->SetMinimum(1e8);
+  from_eta->SetMaximum(1e16);
   from_pi0->Draw("same");
 
   from_pi0decay->SetMarkerStyle(kFullTriangleUp);
@@ -229,7 +236,7 @@ void PlotAcceptedDUNE(int WEIGHT = 0)
   from_eta->GetYaxis()->SetTitle("N_{mCP} /#epsilon^{2} at 10^{21}POT");
   from_eta->GetXaxis()->SetTitle("m_{#chi} (GeV)");
   
-  myleg = c1->BuildLegend(0.5,0.15,0.9,0.45,"","");
+  myleg = c1->BuildLegend(0.15,0.15,0.5,0.45,"","");
   myleg->SetFillStyle(0);
 
   LatexText(0.2,0.85,42,"\"DUNE ND\", 10^{21} POT, 574m, 1m x 1m detector");
@@ -243,6 +250,9 @@ void PlotAcceptedDUNE(int WEIGHT = 0)
   } else if ( WEIGHT == -3 ) {
     //LatexText(0.2,0.3,42,"Meson simulation and TGenPhaseSpace weights");
     from_eta->SetTitle("Meson simulation and TGenPhaseSpace weights");
+  } else if ( WEIGHT == -4 ) {
+    //LatexText(0.2,0.3,42,"Meson simulation and TGenPhaseSpace weights");
+    from_eta->SetTitle("Meson simulation and normalized TGenPhaseSpace weights");
   }
 
 

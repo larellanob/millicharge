@@ -1,4 +1,5 @@
 #include "CrossSection.cxx"
+#include "DiffCrossSection.cxx"
 
 void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
@@ -28,7 +29,7 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   TTreeReaderValue<TLorentzVector> Pos4v(reader,"Pos");
   TTreeReaderValue<Float_t> weight_pi0(reader,"Weight");
   TTreeReaderValue<Int_t> evnt(reader,"Event");
-
+  Long64_t TotalEntries = reader.GetEntries();
 
   //////////
   // decay
@@ -52,6 +53,7 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   TString out_filename
     = Form("sim/mCP_q_%0.3f_m_%0.3f_%s.root",mCPcharge,mCPmass,mode.Data());
   auto g = TFile::Open(out_filename,"recreate");
+  //cout << "NO OUTPUT FILE, REMEMBER TO TURN THIS BACK ON" << endl;
   //tree->SetDirectory(g); // remember this line in the future!
 
   // metadata tree
@@ -63,7 +65,7 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   meta.Branch("HornMode",&horn);
   meta.Fill();
   meta.Write();
-
+  //cout << "NO OUTPUT FILE, REMEMBER TO TURN THIS BACK ON 2" << endl;
   // main mcp particle tree
   TLorentzVector mCPMom;
   TLorentzVector mCPPos;
@@ -76,6 +78,8 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   tree->Branch("WeightDecay",&weight_decay);
   Int_t event;
   tree->Branch("Event",&event);
+  Double_t cross_section_differential;
+  tree->Branch("DiffCrossSection",&cross_section_differential);
   
 
   
@@ -85,6 +89,9 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   while ( reader.Next() ) {
     events++;
     // for testing
+    if ( events % 100 == 0 ) {
+      cout << events << "/" << TotalEntries << endl;
+    }
     /*
     if ( events < 5 ) {
       cout << "Meson Px: " << Mom4v->Px() << endl;
@@ -96,11 +103,20 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
     TGenPhaseSpace decay;
     decay.SetDecay(*Mom4v, 3, masses);
     weight_decay = decay.Generate();
-
+    Double_t wtmax = decay.GetWtMax();
+    
+    //cout << Form("weight decay: %.3f, weightmax: %.3f",weight_decay,wtmax) << endl;
+    
     // collect decay products
     TLorentzVector *gamma = decay.GetDecay(0);
     TLorentzVector *mCP1 = decay.GetDecay(1);
     TLorentzVector *mCP2 = decay.GetDecay(2);
+
+
+    cross_section_differential =
+      DiffCrossSection(*mCP1,*mCP2,mCPcharge,kMesonMass);
+
+    //cout << "diferential cross section " << cross_section_differential << endl;
 
     // fill metadata variables
     event = *evnt;
@@ -120,4 +136,5 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   cout << "done " << events << " events" << endl;
   // write output
   g->Write();
+  //cout << "NO OUTPUT FILE, REMEMBER TO TURN THIS BACK ON 3" << endl;
 }

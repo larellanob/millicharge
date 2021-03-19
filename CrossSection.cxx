@@ -19,7 +19,9 @@ Double_t CrossSection(Double_t massmcp= 0.0001, Double_t massmeson = 9.0 )
   // this might generate a warning of 'object already instantiated
   TDatabasePDG pdg;
   //massmeson = pdg.GetParticle(221)->Mass();
+  //massmcp= pdg.GetParticle(11)->Mass();
   Double_t x = (massmcp*massmcp)/(massmeson*massmeson);
+  //Double_t x = (massmcp*massmcp*massmcp*massmcp)/(massmeson*massmeson*massmeson*massmeson);
   if ( x == 0 ) {
     cout << "ERROR: mCP mass 0?" << endl;
     //return 0;
@@ -32,17 +34,23 @@ Double_t CrossSection(Double_t massmcp= 0.0001, Double_t massmeson = 9.0 )
   Double_t i = f->Integral(4*x,1.0);
   Double_t i2 = f2->Integral(4*x,1.0);
   Double_t epsilon = 0.01;
+  Double_t alpha = 1./137.;
+  //Double_t alpha = 1.;
+
   Double_t BRMesonPhotonPhoton;
   if ( massmeson == pdg.GetParticle(111)->Mass() ) {
     // pi0 -> gamma gamma
     BRMesonPhotonPhoton = 0.98823;
+    //return 0.023*epsilon*epsilon;
   } else if ( massmeson == pdg.GetParticle(221)->Mass() ) {
     // eta -> gamma gamma
     BRMesonPhotonPhoton = 0.3941;
+    //return 0.014*epsilon*epsilon;
   }
-  Double_t alpha = 1./137.;
-  //Double_t alpha = 1.;
-
+  else {
+    cout << "COULD NOT COMPUTE CROSS SECTION" << endl;
+    return 0;
+  }
   // eq. (2) in arXiv 1812.03998v2
   //return epsilon*epsilon*BRMesonPhotonPhoton*alpha*i;
   //return i; // to check the integral

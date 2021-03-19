@@ -90,26 +90,26 @@ void PlotAcceptedArgoneut(int WEIGHT = 0)
   ////////////////////////////////////////////////////////
   // data points obtained using WebPlotDigitizer
   // from fig. 2 (left) in arXiv:1902.03246v2
-  Double_t xpi0[6] = { 0.010088954277555864,
+  Double_t xpi0[5] = { 0.010088954277555864,
 		       0.020130110267451286,
 		       0.029986313485755686,
-		       0.039810717055349755,
+		       //0.039810717055349755,
 		       0.04967682673934071,
 		       0.0598305612629714,
 		         };
 
-  Double_t ypi0[6] = { 29053078518.935688,
+  Double_t ypi0[5] = { 29053078518.935688,
 		       29053078518.935688,
 		       15592720260.810507,
-		       10733953891.080954,
+		       //10733953891.080954,
 		       7389202410.398621,
 		       1765939991.098824,
   };
 
-  Double_t xeta[9] = { 0.01000000000000001,
+  Double_t xeta[8] = { 0.01000000000000001,
 		       0.020309176209047368,
 		       0.029986313485755686,
-		       0.039810717055349755,
+		       //0.039810717055349755,
 		       0.05011872336272725,
 		       0.0598305612629714,
 		       0.1,
@@ -117,10 +117,10 @@ void PlotAcceptedArgoneut(int WEIGHT = 0)
 		       0.24897391368871477
   };
   
-  Double_t yeta[9] = { 1559272026.0810509,
+  Double_t yeta[8] = { 1559272026.0810509,
 		       1559272026.0810509,
 		       1559272026.0810509,
-		       1659391704.1669834,
+		       //1659391704.1669834,
 		       1659391704.1669834,
 		       1659391704.1669834,
 		       1559272026.0810509,
@@ -129,8 +129,8 @@ void PlotAcceptedArgoneut(int WEIGHT = 0)
   };
 
   
-  TGraph *from_pi0 = new TGraph(6,xpi0,ypi0);
-  TGraph *from_eta = new TGraph(9,xeta,yeta);
+  TGraph *from_pi0 = new TGraph(5,xpi0,ypi0);
+  TGraph *from_eta = new TGraph(8,xeta,yeta);
   from_pi0->SetName("pi0_paper");
   from_eta->SetName("eta_paper");
   
@@ -157,6 +157,17 @@ void PlotAcceptedArgoneut(int WEIGHT = 0)
     from_etadecay = (TGraph*)gDirectory->Get("eta_decay");
   }
       
+  for ( int i = 0; i < 5; i++ ) {
+    cout << ypi0[i] << " " << ypi0decay[i] << endl;
+  }
+  cout << endl;
+  for ( int i = 0; i < 8; i++ ) {
+    cout << yeta[i] << " " << yetadecay[i] << endl;
+  }  cout << endl;
+
+  // PROTIP these have to be before the TCanvas creation
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
   
   auto *c1 = new TCanvas();
   c1->SetLogy();
@@ -166,7 +177,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0)
   from_eta->SetLineColor(kOrange);
   from_pi0->SetLineWidth(5);
   from_eta->SetLineWidth(5);
-  
+
   from_eta->Draw();
   
   from_eta->SetMinimum(1e-2);
@@ -194,15 +205,49 @@ void PlotAcceptedArgoneut(int WEIGHT = 0)
 
   LatexText(0.2,0.3,42,"#epsilon = 0.01");
   LatexText(0.2,0.2,42,"10^{20} POT");
-  
+
   gStyle->SetOptTitle(0);
-  gStyle->SetPadTickX(1);
-  gStyle->SetPadTickY(1);
+
 
   TString weight_tstring;
   weight_tstring.Form("%i",abs(WEIGHT));
   c1->SaveAs("img/AcceptedArgoneut_"+weight_tstring+".png");
-    
+
+
+  //////////////
+  
+  auto *c2 =  new TCanvas();  
+  double ratiopi0[5];
+  double ratioeta[8];
+  for ( int i = 0; i < 5; i++ ) {
+    ratiopi0[i] = from_pi0decay->GetY()[i]/ypi0[i];
+    cout << ypi0[i] << " " << from_pi0decay->GetY()[i] << " " << ratiopi0[i];
+      cout << endl;
+  }
+  cout << endl;
+  for ( int i = 0; i < 8; i++ ) {
+    ratioeta[i] = from_etadecay->GetY()[i]/yeta[i];
+    cout << yeta[i] << " " << from_etadecay->GetY()[i] << " " << ratioeta[i];
+      cout << endl;
+  }  cout << endl;
+  TGraph *ratio_pi0 = new TGraph(5,xpi0decay,ratiopi0);
+  TGraph *ratio_eta = new TGraph(8,xetadecay,ratioeta);
+
+  c2->SetLogy();
+  c2->SetLogx();
+
+  ratio_pi0->SetMarkerStyle(kFullTriangleUp);
+  ratio_eta->SetMarkerStyle(kFullTriangleUp);
+  ratio_pi0->SetMarkerSize(1.5);
+  ratio_eta->SetMarkerSize(1.5);
+  ratio_pi0->SetMarkerColor(kBlue+2);
+  ratio_eta->SetMarkerColor(kOrange-2);
+  
+  ratio_eta->Draw("A P");
+  ratio_pi0->Draw("same P");
+  ratio_eta->GetYaxis()->SetTitle("(mCP our simul)/(mCP published)");
+  ratio_eta->GetXaxis()->SetTitle("m_{#chi} (GeV)");
+  c2->SaveAs("img/DifferenceAcceptedArgoneut_"+weight_tstring+".png");
   /*
 ** pi0
 0.020130110267451286, 29053078518.935688
