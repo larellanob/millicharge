@@ -5,7 +5,7 @@
 // or the PhysRevD associated with it
 #include "CrossSection.cxx"
 
-Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
+Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
 {
   // opens files containing mCP particles
   TFile *f  = new TFile(fstr);
@@ -14,14 +14,16 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
   TTreeReaderValue<Float_t> weight_decay(reader,"WeightDecay");
   TTreeReaderValue<Float_t> weight_meson(reader,"WeightMeson");
   TTreeReaderValue<Int_t> event(reader,"Event");
-
+  TTreeReaderValue<Double_t> diff_xsec(reader,"DiffCrossSection");
   // loops over events
   int events = 0;
   Double_t value1 = 0; // result stored here
   Double_t value2 = 0; // result stored here
   Double_t value3 = 0; // result stored here
+  Double_t value4 = 0; // result stored here
   Double_t sum_weight_decay = 0;
   Double_t sum_weight_meson = 0;
+  Double_t sum_diff_xsec = 0;
   while ( reader.Next() ) {
     events++;
 
@@ -38,7 +40,7 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
     // if they pass, compute integral
     sum_weight_decay += *weight_decay;
     sum_weight_meson += *weight_meson;
-
+    sum_diff_xsec += *diff_xsec;
     // "angular acceptance"
     // this is a 'circular detector' approximation used on Friday 12 March 2021
     /*
@@ -55,11 +57,18 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
     Double_t xdev = atan2(0.235,975.); // x deviation
     Double_t ydev = atan2(0.2  ,975.); // y deviation
 
+    if ( DUNE ) {
+      // DUNE geometry instead of ArgoNeuT
+      xdev = atan2(0.5,1040.);
+      ydev = atan2(0.5,1040.);
+    }
+    
     /*
     Double_t xdev = atan2(0.235,1033.); // x deviation
     Double_t ydev = atan2(0.2  ,1033.); // y deviation
     */
     if ( abs(atan2(Mom->Px(),Mom->Pz())) < xdev && abs(atan2(Mom->Py(),Mom->Pz())) < ydev ) {
+      value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
       value3+= (*weight_meson)*(*weight_decay);
       value2+= (*weight_meson);
       value1++;
@@ -71,6 +80,13 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
     cout << "px over pz " << atan2(Mom->Px(),Mom->Pz()) << endl;
     cout << "py over pz " << atan2(Mom->Py(),Mom->Pz()) << endl;
     */
+  }
+  cout << "----------------------------------" << endl;
+  cout << "== AcceptedArgoneut.cxx output: ==" << endl;
+  if ( DUNE ) {
+    cout << "**********************************" << endl;
+    cout << "***Using DUNE geometry and POTs***" << endl;
+    cout << "**********************************" << endl;
   }
   cout << Form("finished looping %i events",events) << endl;
   
@@ -91,21 +107,34 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1)
   } else if ( *meson == "eta" ) {
     mesonmass = pdg.GetParticle(221)->Mass();
   }
-  Double_t truexsec = CrossSection(*mass,mesonmass); // replace xsec with truexsec
+  //Double_t truexsec = CrossSection(*mass,mesonmass); // recalculate xsec using CrossSection
+  Double_t truexsec = *xsec; // no need to recalculate
+
+  cout << "TTree cross section: " << *xsec << endl;
+  cout << "Recalculated cross section: " << truexsec << endl;
+  cout << "Unweighted mCPs passing: " << value1 << endl;
   
+  /*
   cout << Form("value: %.3f\nPOT normalized value: %.3f\n(old) xsec: %.7f\nsum weight decays: %.3f\nsum weight meson: %.3f",
 	       value1,(1e20/500000.)*value1/(sum_weight_decay*0.5),*xsec,sum_weight_decay/2.,sum_weight_meson/2.) << endl;
-
+  */
   Double_t result;
+  Double_t POT_norm = 1e20/500000.; // POT normalization
+  if ( DUNE ) {
+    POT_norm = 1e21/500000.;
+  }
   if ( WEIGHT == 1 ) {
-    result = (1e20/500000.)*(truexsec)*value1; // result uses truexsec
+    result = POT_norm*(truexsec)*value1; // result uses truexsec
   } else if ( WEIGHT == 2 ) {
-    result = (1e20/500000.)*(truexsec)*value2; // result uses truexsec
+    result = POT_norm*(truexsec)*value2; // result uses truexsec
   } else if ( WEIGHT == 3 ) {
-    result = (1e20/500000.)*(truexsec)*value3*(events/sum_weight_decay); // result uses truexsec
+    result = POT_norm*(truexsec)*value3*(events/sum_weight_decay); // result uses truexsec
+  } else if ( WEIGHT == 4 ) {
+    result = POT_norm*value4*(events/sum_weight_decay);
   }
   cout << "geometrical acceptance " << value1/(events) << endl;
   cout << "result " << result << endl;
+  cout << "----------------------------------" << endl;
   return result;
   
 }

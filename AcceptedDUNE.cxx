@@ -3,6 +3,19 @@
 
 // uses cross section from eq (2) in arXiv:1812.03998v2
 // or the PhysRevD associated with it
+
+
+
+///////////////////////////
+// DEPRECATED
+// Use AcceptedArgoneut with DUNE flag
+///////////////////////////
+
+
+
+
+
+
 #include "CrossSection.cxx"
 
 Double_t AcceptedDUNE(TString fstr, int WEIGHT = 1)

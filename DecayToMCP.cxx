@@ -89,9 +89,11 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   while ( reader.Next() ) {
     events++;
     // for testing
-    if ( events % 100 == 0 ) {
+
+    if ( events % 100000 == 0 ) {
       cout << events << "/" << TotalEntries << endl;
     }
+
     /*
     if ( events < 5 ) {
       cout << "Meson Px: " << Mom4v->Px() << endl;
@@ -114,7 +116,7 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
 
 
     cross_section_differential =
-      DiffCrossSection(*mCP1,*mCP2,mCPcharge,kMesonMass);
+      DiffCrossSection(*mCP1,*mCP2,mCPcharge,meson,kMesonMass);
 
     //cout << "diferential cross section " << cross_section_differential << endl;
 
