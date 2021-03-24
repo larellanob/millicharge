@@ -1,4 +1,4 @@
-# Millicharged particles seach code
+# Millicharged particles search code
 
 Millicharge (mCP) particle analysis for microboone.
 
@@ -10,9 +10,12 @@ acceptance in the ArgoNeuT detector as shown in
 
 0. Requirements:
    * `ROOT 6.xx`.
-   * Access to the simulation data, at least the text files.
+   
+   * Access to the simulation files, at least the text files. They can
+     be found in the Manchester cluster or uboonegpvm* machines at
+     Fermilab.
 
-1. Use [`txt24v.cxx`](txtt2v.cxx) to generate ROOT files from the
+1. Use [`txt24v.cxx`](txt24v.cxx) to generate ROOT files from the
    initial text files.
 
 2. Use [`DecayToMCP.cxx`](DecayToMCP.cxx) to generate mCP particles of

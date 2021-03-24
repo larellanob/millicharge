@@ -60,7 +60,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   weight_tstring.Form("%i",abs(WEIGHT));
 
 
-  if ( WEIGHT == 1 || WEIGHT == 2 || WEIGHT == 3 || WEIGHT == 4 ) {
+  if ( WEIGHT > 0 ) {
     cout << "Calculating simulation plot points" << endl;
     cout << "Will be stored in ./hist folder, run with negative number next time" << endl;
     cout << "e.g. root -l -b -q PlotAcceptedArgoneut.cxx(-"+weight_tstring+")" << endl;
@@ -111,18 +111,18 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   // data points obtained using WebPlotDigitizer
   // from fig. 2 (left) in arXiv:1902.03246v2
   // ArgoNeuT
-  Double_t xpi0[6] = { 0.010088954277555864,
+  Double_t xpi0[5] = { 0.010088954277555864,
 		       0.020130110267451286,
 		       0.029986313485755686,
-		       0.039810717055349755,
+		       //0.039810717055349755,
 		       0.04967682673934071,
 		       0.0598305612629714,
 		         };
 
-  Double_t ypi0[6] = { 29053078518.935688,
+  Double_t ypi0[5] = { 29053078518.935688,
 		       29053078518.935688,
 		       15592720260.810507,
-		       10733953891.080954,
+		       //10733953891.080954,
 		       7389202410.398621,
 		       1765939991.098824,
   };
@@ -157,14 +157,14 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
     xpi0[2] = 0.030291989724257083; 
     xpi0[3] = 0.05026258415779048; 
     xpi0[4] = 0.05969440255395195; 
-    xpi0[5] = 0.06382329961306857;
+    // xpi0[5] = 0.06382329961306857;
 
     ypi0[0] = 2848035868435805;
     ypi0[1] = 1123324032978031.1;
     ypi0[2] = 403701725859656.6;
     ypi0[3] = 15556761439304.787;
     ypi0[4] = 453487850812.85913;
-    ypi0[5] = 17475284000.0769;
+    //ypi0[5] = 17475284000.0769;
     
     xeta[0] = 0.010192923275448693; 
     xeta[1] = 0.02027934585187628; 
@@ -187,7 +187,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   //sizeof(xpi0decay)/sizeof(xpi0decay[0])
   //int pi0n = sizeof(xpi0)/sizeof(xpi0[0]);
   //int etan = sizeof(xeta)/sizeof(xeta[0]);
-  int pi0n = 6;
+  int pi0n = 5;
   int etan = 8;
   TGraph *from_pi0 = new TGraph(pi0n,xpi0,ypi0);
   TGraph *from_eta = new TGraph(etan,xeta,yeta);
@@ -221,7 +221,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   
   cout << "PlotAcceptedArgoneut.cxx: " << endl;
   cout << "Ploting the following " << endl;
-  for ( int i = 0; i < 6; i++ ) {
+  for ( int i = 0; i < 5; i++ ) {
     cout << ypi0[i] << " " << ypi0decay[i] << endl;
   }
   cout << endl;
@@ -311,17 +311,20 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
     from_eta->SetTitle("Meson simulation and normalized TGenPhaseSpace weights");
   } else if ( abs(WEIGHT) == 4 ) {
     from_eta->SetTitle("Differential Branching fraction from arXiv 2010.07941v1");
+  } else if ( abs(WEIGHT) == 5 ) {
+    from_eta->SetTitle("Branching fraction from Zhen Liu email");
   }
 
   c1->SaveAs("img/Accepted_"+detector+"_"+weight_tstring+".png");
 
   //////////////
   // RATIO between simulation / published
-  /*
+
   auto *c2 =  new TCanvas();  
   double ratiopi0[5];
   double ratioeta[8];
 
+  
   cout << "Plotting and outputing ratio of simulation/published " << endl;
   for ( int i = 0; i < 5; i++ ) {
     ratiopi0[i] = from_pi0decay->GetY()[i]/ypi0[i];
@@ -347,12 +350,28 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   ratio_pi0->SetMarkerColor(kBlue+2);
   ratio_eta->SetMarkerColor(kOrange-2);
   
+  double ratiomin = min(ratio_eta->GetMinimum(), ratio_pi0->GetMinimum());
+  double ratiomax = max(ratio_eta->GetMaximum(), ratio_pi0->GetMaximum());
+  cout << "etamin, etamax " <<  ratio_eta->GetMinimum()<< " " << ratio_eta->GetMaximum() << endl;
+  cout << "pi0min, pi0max " <<  ratio_pi0->GetMinimum()<< " " << ratio_pi0->GetMaximum() << endl;
+  cout << "ratiomin, ratiomax " << ratiomin << " " << ratiomax << endl;
+
+  if ( detector == "argoneut" ) {
+    ratio_eta->SetMaximum(40);
+    ratio_eta->SetMinimum(0.0001);
+  } else if ( detector == "dune" ) {
+    ratio_eta->SetMaximum(40);
+    ratio_eta->SetMinimum(0.1);
+  }
+  ratio_eta->SetTitle("mCP flux comparison "+detector);
+  
   ratio_eta->Draw("A P");
   ratio_pi0->Draw("same P");
-  ratio_eta->GetYaxis()->SetTitle("(mCP our simul)/(mCP published)");
+    
+  ratio_eta->GetYaxis()->SetTitle("(mCP our simul)/("+detector+" published)");
   ratio_eta->GetXaxis()->SetTitle("m_{#chi} (GeV)");
-  c2->SaveAs("img/DifferenceAcceptedArgoneut_"+weight_tstring+".png");
-  */
+  c2->SaveAs("img/DifferenceAccepted_"+detector+"_"+weight_tstring+".png");
+
 
 
   /*

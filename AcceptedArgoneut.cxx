@@ -107,7 +107,9 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
   } else if ( *meson == "eta" ) {
     mesonmass = pdg.GetParticle(221)->Mass();
   }
-  //Double_t truexsec = CrossSection(*mass,mesonmass); // recalculate xsec using CrossSection
+  Double_t decay_factor_zhenliu = CrossSection(*mass,mesonmass,"zhenliu");
+  Double_t decay_factor_physrevd = CrossSection(*mass,mesonmass,"physrevd");
+  Double_t decay_factor_naive = CrossSection(*mass,mesonmass,"naive");
   Double_t truexsec = *xsec; // no need to recalculate
 
   cout << "TTree cross section: " << *xsec << endl;
@@ -131,6 +133,8 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
     result = POT_norm*(truexsec)*value3*(events/sum_weight_decay); // result uses truexsec
   } else if ( WEIGHT == 4 ) {
     result = POT_norm*value4*(events/sum_weight_decay);
+  } else if ( WEIGHT == 5 ) {
+    result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
   }
   cout << "geometrical acceptance " << value1/(events) << endl;
   cout << "result " << result << endl;
