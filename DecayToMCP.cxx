@@ -1,6 +1,13 @@
 #include "CrossSection.cxx"
 #include "DiffCrossSection.cxx"
 
+const bool kTest = false;
+bool kWriteFile = true;
+// not sure if I can put an if at this point
+if ( kTest ) {
+  kWriteFile = false;
+ }
+
 void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
   // decay parameters
@@ -52,8 +59,12 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   // output file
   TString out_filename
     = Form("sim/mCP_q_%0.3f_m_%0.3f_%s.root",mCPcharge,mCPmass,mode.Data());
-  auto g = TFile::Open(out_filename,"recreate");
-  //cout << "NO OUTPUT FILE, REMEMBER TO TURN THIS BACK ON" << endl;
+  TFile g;
+  if ( kWriteFile ) {
+    g.Open(out_filename,"recreate");
+  } else {
+    cout << "NO OUTPUT FILE IS BEING GENERATED" << endl;
+  }
   //tree->SetDirectory(g); // remember this line in the future!
 
   // metadata tree
@@ -64,8 +75,12 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   meta.Branch("Mother",&meson);
   meta.Branch("HornMode",&horn);
   meta.Fill();
-  meta.Write();
-  //cout << "NO OUTPUT FILE, REMEMBER TO TURN THIS BACK ON 2" << endl;
+  if ( kWriteFile ) {
+    meta.Write();
+  } else {
+    cout << "NO OUTPUT FILE IS BEING GENERATED" << endl;
+  }
+
   // main mcp particle tree
   TLorentzVector mCPMom;
   TLorentzVector mCPPos;
@@ -88,17 +103,19 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   int events = 0;
   while ( reader.Next() ) {
     events++;
-    // for testing
 
+    // print progress at regular intervals
     if ( events % 100000 == 0 ) {
       cout << events << "/" << TotalEntries << endl;
     }
 
-    /*
-    if ( events < 5 ) {
+    // do only 5 events if testing
+    if ( kTest && events < 5 ) {
       cout << "Meson Px: " << Mom4v->Px() << endl;
-    } else break;
-    */
+    } else if ( kTest && events >= 5 ) {
+      break;
+    }    
+
 
     // generate decay
     Double_t masses[3] = { 0, mCPmass, mCPmass};
@@ -135,8 +152,11 @@ void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.
   }
 
   // finish message
-  cout << "done " << events << " events" << endl;
+  cout << "done: " << events << " events" << endl;
   // write output
-  g->Write();
-  //cout << "NO OUTPUT FILE, REMEMBER TO TURN THIS BACK ON 3" << endl;
+  if ( kWriteFile ) {
+    g->Write();
+  } else {
+    cout << "NO OUTPUT FILE IS BEING GENERATED" << endl;
+  }
 }

@@ -38,9 +38,9 @@ Double_t I3ZhenLiu(Double_t *t, Double_t *par ) {
 Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TString mode = "zhenliu" )
 {
   // this might generate a warning of 'object already instantiated
-  TDatabasePDG pdg;
-  //mass_mes = pdg.GetParticle(221)->Mass();
-  //mass_mcp= pdg.GetParticle(11)->Mass();
+  TDatabasePDG pdgCrossSection;
+  //mass_mes = pdgCrossSection.GetParticle(221)->Mass();
+  //mass_mcp= pdgCrossSection.GetParticle(11)->Mass();
   Double_t x = (mass_mcp*mass_mcp)/(mass_mes*mass_mes);
   //Double_t x = (mass_mcp*mass_mcp*mass_mcp*mass_mcp)/(mass_mes*mass_mes*mass_mes*mass_mes);
   if ( x == 0 ) {
@@ -59,7 +59,7 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
   //Double_t alpha = 1.;
 
 
-  Double_t mass_ele = pdg.GetParticle(11)->Mass();
+  Double_t mass_ele = pdgCrossSection.GetParticle(11)->Mass();
   TF1 *fZhenMCP = new TF1("I3ZhenMCP",I3ZhenLiu,4.0*mass_mcp*mass_mcp,mass_mes*mass_mes,2);
   TF1 *fZhenEle = new TF1("I3ZhenEle",I3ZhenLiu,4.0*mass_ele*mass_ele,mass_mes*mass_mes,2);
   fZhenMCP->SetParameters(mass_mcp,mass_mes);
@@ -74,13 +74,13 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
   Double_t BRMesonPhotonPhoton;
   Double_t BRMesonDalitz;
   //Double_t FormFactor;
-  if ( mass_mes == pdg.GetParticle(111)->Mass() ) {
+  if ( mass_mes == pdgCrossSection.GetParticle(111)->Mass() ) {
     // pi0 -> gamma gamma
     BRMesonPhotonPhoton = 0.98823;
     BRMesonDalitz = 0.0174; // pdg
     //FormFactor = pow(1.0+ 0.11*((mass_mcp*mass_mcp)/(mass_mes*mass_mes)),2);
     //return 0.023*epsilon*epsilon;
-  } else if ( mass_mes == pdg.GetParticle(221)->Mass() ) {
+  } else if ( mass_mes == pdgCrossSection.GetParticle(221)->Mass() ) {
     // eta -> gamma gamma
     BRMesonPhotonPhoton = 0.3941;
     BRMesonDalitz = 0.0069; // pdg
@@ -103,10 +103,12 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
     return epsilon*epsilon*BRMesonPhotonPhoton*alpha*i2;
   } else if ( mode == "zhenliu" ) {
     //return 2.0*BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon;
+    /*
     cout << "Integral check: Dalitz from gamma gamma:" << endl;
     cout << (2.0*alpha)/(3.0*TMath::Pi()) * iZhenEle * BRMesonPhotonPhoton << endl;
     cout << "CrossSection.cxx Result: "
 	 << 2.0*BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon << endl;
+    */
     //cout << "FORMFACTOR " << FormFactor << endl;
     
     //return 2.0*BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon*FormFactor;

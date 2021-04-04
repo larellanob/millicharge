@@ -5,12 +5,16 @@
 // or the PhysRevD associated with it
 #include "CrossSection.cxx"
 
-Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
+#include "ubooneGeo.cxx"
+
+
+Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboone")
 {
   // opens files containing mCP particles
   TFile *f  = new TFile(fstr);
   TTreeReader reader("mCP",f);
   TTreeReaderValue<TLorentzVector> Mom(reader,"Mom");
+  TTreeReaderValue<TLorentzVector> Pos(reader,"Pos");
   TTreeReaderValue<Float_t> weight_decay(reader,"WeightDecay");
   TTreeReaderValue<Float_t> weight_meson(reader,"WeightMeson");
   TTreeReaderValue<Int_t> event(reader,"Event");
@@ -24,6 +28,42 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
   Double_t sum_weight_decay = 0;
   Double_t sum_weight_meson = 0;
   Double_t sum_diff_xsec = 0;
+
+
+  Double_t xdev;
+  Double_t ydev;
+
+  if ( detector == "dune" ) {
+    // DUNE geometry instead of ArgoNeuT
+    xdev = atan2(0.5,1040.);
+    ydev = atan2(0.5,1040.);
+  }
+
+  if ( detector == "argoneut" ) {
+    xdev = atan2(0.235,975.); // x deviation
+    ydev = atan2(0.2  ,975.); // y deviation
+  }
+
+
+  const TVector3 beampos(-31387.58422,
+			 -3316.402543,
+			 -60100.2414); // proton on target in uboone coords * cm
+  const TVector3 uboonepos(31387.58422,
+			   3316.402543,
+			   60100.2414); // proton on target in uboone coords * cm
+  Double_t theta;
+  if ( detector == "naiveuboone" ) {
+    // naive approximation to uboone geometry
+    // circle or radius 2m a distance 679m from target
+    // tan(theta) = 2/679
+    
+    theta = atan2(5,679);
+    //xdev = atan2(0.235,975.); // x deviation
+    //ydev = atan2(0.2  ,975.); // y deviation
+  }
+
+  
+  
   while ( reader.Next() ) {
     events++;
 
@@ -33,7 +73,7 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
     
     /*
     if ( events < 5 ) {
-      cout  << Pt << endl;
+      //cout  << Pt << endl;
     } else break;
     */
 
@@ -54,26 +94,32 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
     // "cartesian acceptance"
     // closer 'rectangular detector' approximation
     // they use 975m as the distance to the target in the paper
-    Double_t xdev = atan2(0.235,975.); // x deviation
-    Double_t ydev = atan2(0.2  ,975.); // y deviation
 
-    if ( DUNE ) {
-      // DUNE geometry instead of ArgoNeuT
-      xdev = atan2(0.5,1040.);
-      ydev = atan2(0.5,1040.);
-    }
-    
-    /*
-    Double_t xdev = atan2(0.235,1033.); // x deviation
-    Double_t ydev = atan2(0.2  ,1033.); // y deviation
-    */
-    if ( abs(atan2(Mom->Px(),Mom->Pz())) < xdev && abs(atan2(Mom->Py(),Mom->Pz())) < ydev ) {
+
+    if ( ( detector ==  "dune " || detector == "argoneut" ) &&
+	 abs(atan2(Mom->Px(),Mom->Pz())) < xdev &&
+	 abs(atan2(Mom->Py(),Mom->Pz())) < ydev ) {
       value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
       value3+= (*weight_meson)*(*weight_decay);
       value2+= (*weight_meson);
       value1++;
     }
 
+    if ( detector ==  "naiveuboone" &&
+	 Mom->Angle(uboonepos) <  theta ) {
+      value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
+      value3+= (*weight_meson)*(*weight_decay);
+      value2+= (*weight_meson);
+      value1++;
+    }
+    
+    if ( detector == "uboone" && ubooneGeo(Pos->Vect(),Mom->Vect()) == true) {
+      value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
+      value3+= (*weight_meson)*(*weight_decay);
+      value2+= (*weight_meson);
+      value1++;
+    }
+    
     /*
     cout << "pt over pz " << atan2(Pt,Mom->Pz()) << endl;
     cout << "geo " << Mom->Theta() << endl;
@@ -81,14 +127,6 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
     cout << "py over pz " << atan2(Mom->Py(),Mom->Pz()) << endl;
     */
   }
-  cout << "----------------------------------" << endl;
-  cout << "== AcceptedArgoneut.cxx output: ==" << endl;
-  if ( DUNE ) {
-    cout << "**********************************" << endl;
-    cout << "***Using DUNE geometry and POTs***" << endl;
-    cout << "**********************************" << endl;
-  }
-  cout << Form("finished looping %i events",events) << endl;
   
   TTreeReader meta("Metadata",f);
   TTreeReaderValue<Double_t> mass(meta,"mCPmass");
@@ -98,6 +136,17 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
   TTreeReaderValue<Double_t> xsec(meta,"CrossSection"); 
   TTreeReaderValue<TString> meson(meta,"Mother");
   meta.Next();
+
+
+  cout << "============ AcceptedArgoneut.cxx output: ============" << endl;
+  cout << "******************************************************" << endl;
+  cout << Form("Decays of %s into mCPs of mass %.3f and charge %.3f",
+	       meson->Data(),*mass,*charge) << endl;
+  cout << "         Using "+detector+" geometry and POTs" << endl;
+  cout << "******************************************************" << endl;
+  cout << Form("finished looping %i events",events) << endl;
+
+
 
   // cross section correction
   TDatabasePDG pdg;
@@ -112,6 +161,7 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
   Double_t decay_factor_naive = CrossSection(*mass,mesonmass,"naive");
   Double_t truexsec = *xsec; // no need to recalculate
 
+  cout << "Simulated particles entering detector geometry: " << value1 << endl;
   cout << "TTree cross section: " << *xsec << endl;
   cout << "Recalculated cross section: " << truexsec << endl;
   cout << "Unweighted mCPs passing: " << value1 << endl;
@@ -122,7 +172,7 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
   */
   Double_t result;
   Double_t POT_norm = 1e20/500000.; // POT normalization
-  if ( DUNE ) {
+  if ( detector == "dune" ) {
     POT_norm = 1e21/500000.;
   }
   if ( WEIGHT == 1 ) {
@@ -136,7 +186,8 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, bool DUNE = false)
   } else if ( WEIGHT == 5 ) {
     result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
   }
-  cout << "geometrical acceptance " << value1/(events) << endl;
+  //cout << "geometrical acceptance " << value1/(events) << endl;
+  cout << "geometrical acceptance " << value3/(sum_weight_decay) << endl;
   cout << "result " << result << endl;
   cout << "----------------------------------" << endl;
   return result;

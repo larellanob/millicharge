@@ -8,7 +8,7 @@ void LatexText(Double_t x, Double_t y, int font, TString text)
   l2.DrawLatex(x,y,text);
 }
 
-void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
+void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
 {
 
 
@@ -66,19 +66,11 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
     cout << "e.g. root -l -b -q PlotAcceptedArgoneut.cxx(-"+weight_tstring+")" << endl;
     for ( int i = 0; i < NSimulPi0; i++ ) {
       TString fstr = Form("sim/mCP_q_0.010_m_%0.3f_fhc_pi0s.root",xpi0decay[i]);
-      if ( !DUNE ) {
-	ypi0decay[i] = AcceptedArgoneut(fstr,WEIGHT);
-      } else if ( DUNE ) {
-	ypi0decay[i] = AcceptedArgoneut(fstr,WEIGHT,true);
-      }
+      ypi0decay[i] = AcceptedArgoneut(fstr,WEIGHT,detector);
     }
     for ( int i = 0; i < NSimulEta; i++ ) {
       TString fstr = Form("sim/mCP_q_0.010_m_%0.3f_fhc_etas.root",xetadecay[i]);
-      if ( !DUNE ) {
-	yetadecay[i] = AcceptedArgoneut(fstr,WEIGHT);
-      } else if ( DUNE ) {
-	yetadecay[i] = AcceptedArgoneut(fstr,WEIGHT,true);
-      }
+      yetadecay[i] = AcceptedArgoneut(fstr,WEIGHT,detector);
     }
   }
 
@@ -90,12 +82,14 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   TFile g;
   TString outfile_graph_decay;
 
+  /*
   TString detector;
   if ( !DUNE ) {
     detector = "argoneut";
   } else if ( DUNE ) {
     detector = "dune";
   }
+  */
   outfile_graph_decay =
     "hist/"+detector+"_acceptance_decay_weight"+weight_tstring+".root";
 
@@ -151,7 +145,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
 
   ////////////// DUNE data points
   // from https://journals.aps.org/prd/pdf/10.1103/PhysRevD.100.015043
-  if ( DUNE ) {
+  if ( detector == "dune" ) {
     xpi0[0] = 0.010192923275448693; 
     xpi0[1] = 0.02027934585187628; 
     xpi0[2] = 0.030291989724257083; 
@@ -210,7 +204,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   }
 
   // DUNE plots are N_accepted/epsilon^2, so we have to multiply by 1/epsilon^2
-  if ( DUNE ) {
+  if ( detector == "dune" ) {
     for ( int i = 0; i < NSimulPi0; i++ ) {
       from_pi0decay->GetY()[i] *= 1e4;
     }
@@ -218,15 +212,22 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
       from_etadecay->GetY()[i] *=1e4;
     }
   }
-  
-  cout << "PlotAcceptedArgoneut.cxx: " << endl;
+  //cout << scientific;
+  cout << "PlotAcceptedArgoneut.cxx: \n" << endl;
   cout << "Ploting the following " << endl;
+  cout << "pi0" << endl;
+  cout << "mCP mass\tpublished\tour simulation" << endl;
+  cout << "----------------------------------------------" << endl;
   for ( int i = 0; i < 5; i++ ) {
-    cout << ypi0[i] << " " << ypi0decay[i] << endl;
+    cout << Form("%8.3f\t%e\t%.3f",xpi0[i], ypi0[i], ypi0decay[i]) << endl;
   }
   cout << endl;
+  cout << "eta" << endl;
+  cout << "mCP mass\tpublished\tour simulation" << endl;
+  cout << "----------------------------------------------" << endl;
   for ( int i = 0; i < 8; i++ ) {
-    cout << yeta[i] << " " << yetadecay[i] << endl;
+    cout << Form("%8.3f\t%e\t%.3f",xeta[i], yeta[i], yetadecay[i]) << endl;
+    //cout << xeta[i] << "\t" << yeta[i] << "\t" << yetadecay[i] << endl;
   }  cout << endl;
 
   // PROTIP these have to be before the TCanvas creation
@@ -251,10 +252,10 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   GlobalMaximum = max(GlobalMaximum,from_etadecay->GetMaximum());
   GlobalMaximum *= 10; 
   from_eta->SetMaximum(GlobalMaximum);
-  cout << GlobalMaximum << endl;
+  cout << "Global Maximum: " << GlobalMaximum << endl;
 
 
-  if ( DUNE ) {
+  if ( detector == "dune" ) {
     from_eta->SetMinimum(1e8);
     //from_eta->SetMaximum(1e16);
     GlobalMaximum *= 100000; // to make the plot look better
@@ -273,7 +274,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
   
   TLegend *myleg;
 
-  if ( !DUNE ) {
+  if ( detector != "dune" ) {
     from_pi0decay->SetTitle("#pi^{0} our simulation");
     from_etadecay->SetTitle("#eta our simulation");
     from_pi0->SetTitle("#pi^{0} arXiv 1902.03246v2");
@@ -287,7 +288,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
     
     LatexText(0.2,0.3,42,"#epsilon = 0.01");
     LatexText(0.2,0.2,42,"10^{20} POT");
-  } else if ( DUNE ) {
+  } else if ( detector == "dune" ) {
     from_pi0decay->SetTitle("#pi^{0} our simulation");
     from_etadecay->SetTitle("#eta our simulation");
     from_pi0->SetTitle("#pi^{0} Phys. Rev. D 100, 015043");
@@ -313,10 +314,13 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
     from_eta->SetTitle("Differential Branching fraction from arXiv 2010.07941v1");
   } else if ( abs(WEIGHT) == 5 ) {
     from_eta->SetTitle("Branching fraction from Zhen Liu email");
+    from_eta->SetTitle("microboone points, argoneut lines");
+  } else if ( abs(WEIGHT) == 5 && detector == "uboone" ) {
+    cout << "what" << endl;
   }
 
   c1->SaveAs("img/Accepted_"+detector+"_"+weight_tstring+".png");
-
+  cout << endl;
   //////////////
   // RATIO between simulation / published
 
@@ -326,16 +330,22 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, bool DUNE = false)
 
   
   cout << "Plotting and outputing ratio of simulation/published " << endl;
+
+  cout << "pi0" << endl;
+  cout << "mCP mass\tpublished\tour simulation\tratio" << endl;
+  cout << "----------------------------------------------------------" << endl;
   for ( int i = 0; i < 5; i++ ) {
     ratiopi0[i] = from_pi0decay->GetY()[i]/ypi0[i];
-    cout << ypi0[i] << " " << from_pi0decay->GetY()[i] << " " << ratiopi0[i];
-      cout << endl;
+    cout << Form("%8.3f\t%e\t%10.3f\t%.3f",xpi0[i], ypi0[i], from_pi0decay->GetY()[i], ratiopi0[i]) << endl;
+    //cout << ypi0[i] << " " << from_pi0decay->GetY()[i] << " " << ratiopi0[i];
   }
-  cout << endl;
+  cout << "eta" << endl;
+  cout << "mCP mass\tpublished\tour simulation\tratio" << endl;
+  cout << "----------------------------------------------------------" << endl;
   for ( int i = 0; i < 8; i++ ) {
     ratioeta[i] = from_etadecay->GetY()[i]/yeta[i];
-    cout << yeta[i] << " " << from_etadecay->GetY()[i] << " " << ratioeta[i];
-      cout << endl;
+    cout << Form("%8.3f\t%e\t%10.3f\t%.3f",xeta[i], yeta[i], from_etadecay->GetY()[i], ratioeta[i]) << endl;
+    //cout << yeta[i] << " " << from_etadecay->GetY()[i] << " " << ratioeta[i];
   }  cout << endl;
   TGraph *ratio_pi0 = new TGraph(5,xpi0decay,ratiopi0);
   TGraph *ratio_eta = new TGraph(8,xetadecay,ratioeta);
