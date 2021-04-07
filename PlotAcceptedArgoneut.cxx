@@ -11,7 +11,20 @@ void LatexText(Double_t x, Double_t y, int font, TString text)
 void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
 {
 
-
+  TString detector_formal;
+  if ( detector == "uboone" || detector == "naiveuboone" ) {
+    detector_formal = "MicroBooNE";
+  } else if ( detector == "dune" || detector == "duneOrnella" ) {
+    detector_formal = "DUNE";
+  } else if ( detector == "argoneut" ) {
+    detector_formal = "ArgoNeuT";
+  } else if ( detector == "t2k" ) {
+    detector_formal = "T2K";
+  } else {
+    detector_formal = detector;
+  }
+    
+  
   // These are the datapoints obtained by Friday 12 March 2021. If
   // script run with WEIGHT != 0, it calculates the y points again
   // using AcceptedArgoneut()
@@ -105,6 +118,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
   // data points obtained using WebPlotDigitizer
   // from fig. 2 (left) in arXiv:1902.03246v2
   // ArgoNeuT
+  /*
   Double_t xpi0[5] = { 0.010088954277555864,
 		       0.020130110267451286,
 		       0.029986313485755686,
@@ -112,6 +126,15 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
 		       0.04967682673934071,
 		       0.0598305612629714,
 		         };
+  */
+
+  Double_t xpi0[5] = { 0.01,
+		       0.02,
+		       0.03,
+		       //0.039810717055349755,
+		       0.05,
+		       0.06,
+  };
 
   Double_t ypi0[5] = { 29053078518.935688,
 		       29053078518.935688,
@@ -120,7 +143,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
 		       7389202410.398621,
 		       1765939991.098824,
   };
-
+  /*
   Double_t xeta[8] = { 0.01000000000000001,
 		       0.020309176209047368,
 		       0.029986313485755686,
@@ -131,7 +154,19 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
 		       0.1995262314968879,
 		       0.24897391368871477
   };
-  
+  */
+
+  Double_t xeta[8] = { 0.01,
+		       0.02,
+		       0.03,
+		       //0.039810717055349755,
+		       0.05,
+		       0.06,
+		       0.1,
+		       0.2,
+		       0.25
+  };
+    
   Double_t yeta[8] = { 1559272026.0810509,
 		       1559272026.0810509,
 		       1559272026.0810509,
@@ -146,20 +181,32 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
   ////////////// DUNE data points
   // from https://journals.aps.org/prd/pdf/10.1103/PhysRevD.100.015043
   if ( detector == "dune" ) {
+    /*
     xpi0[0] = 0.010192923275448693; 
     xpi0[1] = 0.02027934585187628; 
     xpi0[2] = 0.030291989724257083; 
     xpi0[3] = 0.05026258415779048; 
     xpi0[4] = 0.05969440255395195; 
+    */
     // xpi0[5] = 0.06382329961306857;
 
+
+    // re extraction 05-apr-21
+    ypi0[0] = 4245286227393835;
+    ypi0[1] = 1654263361624045.5;
+    ypi0[2] = 543104899786251.3;
+    ypi0[3] = 17640529950316.74;
+    ypi0[4] = 288712186834.80786;
+    
+    /*
     ypi0[0] = 2848035868435805;
     ypi0[1] = 1123324032978031.1;
     ypi0[2] = 403701725859656.6;
     ypi0[3] = 15556761439304.787;
     ypi0[4] = 453487850812.85913;
+    */
     //ypi0[5] = 17475284000.0769;
-    
+    /*
     xeta[0] = 0.010192923275448693; 
     xeta[1] = 0.02027934585187628; 
     xeta[2] = 0.0300039493211703; 
@@ -168,7 +215,21 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
     xeta[5] = 0.1000000000000001; 
     xeta[6] = 0.2008651365410111; 
     xeta[7] = 0.25023050302971983;
-      
+    */
+
+    // re extraction 05-apr-21
+    yeta[0] = 543104899786251.3;
+    yeta[1] = 420006308884957.9;
+    yeta[2] = 298138872452931.3;
+    yeta[3] = 211632028822338.97;
+    yeta[4] = 163664123270640.62;
+    yeta[5] = 69480104843934.05;
+    yeta[6] = 1349685425291.2366;
+    yeta[7] = 7900860950.738926;
+    
+    
+
+    /*
     yeta[0] = 335160265093884.75;
     yeta[1] = 253536449397011.66;
     yeta[2] = 191791026167249.28;
@@ -177,7 +238,43 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
     yeta[5] = 43287612810830.62;
     yeta[6] = 1047615752789.6663;
     yeta[7] = 5722367659.35022;
+    */
   }
+
+  if ( detector == "duneOrnella" ) {
+    ypi0[0] = 2106344542324141.5;
+    ypi0[1] = 1968419447286631.5;
+    ypi0[2] = 1070068955693183.4;
+    ypi0[3] = 508021804691307.44;
+    ypi0[4] = 114504756993829.06;
+
+    yeta[0] = 114504756993829.06;
+    yeta[1] = 122527985738287.39;
+    yeta[2] = 122527985738287.39;
+    yeta[3] = 122527985738287.39;
+    yeta[4] = 114504756993829.06;
+    yeta[5] = 114504756993829.06;
+    yeta[6] = 50802180469130.75;
+    yeta[7] = 8161400793251.868;
+  }
+
+  if ( detector == "t2k" ) {
+    ypi0[0] = 0.0031207061265801687;
+    ypi0[1] = 0.0013029943385750237;
+    ypi0[2] = 0.0005159928433650851;
+    ypi0[3] = 0.000026624861440398474;
+    ypi0[4] = 9.484435649458936e-7;
+
+    yeta[0] = 0.002959813643842186;
+    yeta[1] = 0.0020981623055342426;
+    yeta[2] = 0.0016102620275609408;
+    yeta[3] = 0.0010543589908346815;
+    yeta[4] = 0.0008760496806274342;
+    yeta[5] = 0.0003657786820891421;
+    yeta[6] = 0.000014485034710121493;
+    yeta[7] = 1.4873521072935117e-7;
+  }
+  
   //sizeof(xpi0decay)/sizeof(xpi0decay[0])
   //int pi0n = sizeof(xpi0)/sizeof(xpi0[0]);
   //int etan = sizeof(xeta)/sizeof(xeta[0]);
@@ -267,8 +364,8 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
   from_etadecay->SetMarkerStyle(kFullSquare);
   from_pi0decay->SetMarkerSize(1.5);
   from_etadecay->SetMarkerSize(1);
-  from_pi0decay->SetMarkerColor(kBlue+5);
-  from_etadecay->SetMarkerColor(kOrange-5);
+  from_pi0decay->SetMarkerColor(kBlue+2);
+  from_etadecay->SetMarkerColor(kOrange-2);
   from_pi0decay->Draw("same P");
   from_etadecay->Draw("same P");
   
@@ -314,7 +411,11 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
     from_eta->SetTitle("Differential Branching fraction from arXiv 2010.07941v1");
   } else if ( abs(WEIGHT) == 5 ) {
     from_eta->SetTitle("Branching fraction from Zhen Liu email");
-    from_eta->SetTitle("microboone points, argoneut lines");
+    if ( detector == "dune" || detector == "duneOrnella" ) {
+      from_eta->SetTitle(detector_formal+" points, DUNE lines");
+    } else if ( detector == "uboone" || detector == "argoneut" ) {
+      from_eta->SetTitle(detector_formal+" points (simulation), ArgoNeuT lines (published)");
+    }
   } else if ( abs(WEIGHT) == 5 && detector == "uboone" ) {
     cout << "what" << endl;
   }
@@ -354,9 +455,9 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
   c2->SetLogx();
 
   ratio_pi0->SetMarkerStyle(kFullTriangleUp);
-  ratio_eta->SetMarkerStyle(kFullTriangleUp);
+  ratio_eta->SetMarkerStyle(kFullSquare);
   ratio_pi0->SetMarkerSize(1.5);
-  ratio_eta->SetMarkerSize(1.5);
+  ratio_eta->SetMarkerSize(1.2);
   ratio_pi0->SetMarkerColor(kBlue+2);
   ratio_eta->SetMarkerColor(kOrange-2);
   
@@ -384,6 +485,156 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
 
 
 
+  // ratio plot using TRatioPlot (duh)
+  auto *c3 = new TCanvas();
+    //from_pi0decay->GetY()[i]/ypi0[i];
+  //auto rp = new TRatioPlot(from_pi0decay->GetHistogram(),from_pi0->GetHistogram());
+  //rp->Draw();
+
+  // top pad (plot)
+  // xlow, ylow, xhigh, yhigh
+  TPad *pad1 = new TPad("pad1","pad1",0,0.3,1.0,1.0);
+  pad1->SetBottomMargin(0.05); // upper and lower plot are joined
+  pad1->SetGridx();
+  pad1->Draw();
+  pad1->cd();
+  pad1->SetLogy();
+  pad1->SetLogx();
+  from_eta->Draw();
+  //from_eta->SetMinimum(1e5);
+
+
+  // y axis
+  if ( detector != "t2k" ) {
+    from_eta->GetYaxis()->SetTitle("# mCP accepted by "+detector_formal);
+  } else if ( detector == "t2k" ) {
+    from_eta->GetYaxis()->SetTitle("mCP Br for #epsilon^{2} = 1");
+  }
+  
+  // top pad range
+  if ( detector == "duneOrnella" ) {
+    from_eta->SetMinimum(1e8);
+    from_eta->SetMaximum(1e17);
+  } else if ( detector == "t2k" ) {
+    from_eta->SetMinimum(1e-7);
+    from_eta->SetMaximum(1e-2);
+  }
+
+  // drawing
+  from_etadecay->Draw("same P");
+  from_pi0->Draw("same");
+  from_pi0decay->Draw("same P");
+
+
+  // legend has to be after drawing
+  TLegend *ratioleg;
+  from_etadecay->SetTitle("#eta Manc. simulation");
+  from_pi0decay->SetTitle("#pi^{0} Manc. simulation");
+  if ( detector == "dune" ) {
+    from_pi0->SetTitle("#pi^{0} Phys. Rev. D 100, 015043");
+    from_eta->SetTitle("#eta Phys. Rev. D 100, 015043");
+  } else if ( detector == "argoneut" ||
+	      detector == "duneOrnella" ||
+	      detector == "uboone" ) {
+    from_pi0->SetTitle("#pi^{0} arXiv:1902.03246");
+    from_eta->SetTitle("#eta arXiv:1902.03246");
+  } else if ( detector == "t2k" ) {
+    from_pi0->SetTitle("#pi^{0} arXiv 2103.11814");
+    from_eta->SetTitle("#eta arXiv 2103.11814");
+  } 
+  ratioleg = pad1->BuildLegend(0.6,0.7,0.9,0.9,"","");  
+
+  // title after legend is built
+  if ( detector == "dune" ) {
+    from_eta->SetTitle("Validation with FerMINI group: "+detector_formal+" detector");
+  } else if ( detector == "argoneut" || detector == "duneOrnella" ) {
+    from_eta->SetTitle("Validation with ArgoNeuT group: "+detector_formal+" detector");
+  } else if ( detector == "t2k" ) {
+    from_eta->SetTitle("Validation with T2K group: Branching ratio only");
+  } else if ( detector == "uboone" ) {
+    from_eta->SetTitle("Comparison of MicroBooNE simulation (10^{21} POT fhc) with ArgoNeuT group");
+  }
+  
+  // first ratio (pi0)
+  c3->cd();   // Go back to the main canvas before defining pad2!!!!
+  TPad *pad2 = new TPad("pad2","pad3",0,0.05,1.0,0.32);
+  pad2->SetTopMargin(0.0);
+  pad2->SetBottomMargin(0.3);
+  pad2->SetGridx();
+  if ( detector == "dune" ) {
+    pad2->SetGridy();
+  }
+  pad2->Draw();
+  pad2->cd();
+
+  // per detector adjustment
+  pad2->SetLogx();
+
+  if ( detector == "argoneut" ||
+       detector == "uboone" ||
+       detector == "naiveuboone" ||
+       detector == "duneOrnella"
+       ) {
+    pad2->SetLogy();
+  } if ( detector == "dune" ) {
+    ratio_eta->SetMaximum(5.5);
+    ratio_eta->SetMinimum(-0.5);
+  } if ( detector == "t2k" ) {
+    ratio_eta->SetMaximum(1.5);
+    ratio_eta->SetMinimum(0.2);
+  }
+      
+
+
+  // drawing
+  ratio_eta->Draw("A P");
+  ratio_pi0->Draw("same P");
+  ratio_eta->GetYaxis()->SetTitle("Simulation/published");
+  ratio_eta->SetTitle("");
+
+  // y axis
+  from_eta->GetYaxis()->SetTitleSize(0.05);
+  from_eta->GetYaxis()->SetTitleOffset(0.7);
+  ratio_eta->GetYaxis()->SetTitleSize(0.09);
+  ratio_eta->GetYaxis()->SetTitleOffset(0.4);
+  ratio_eta->GetYaxis()->SetLabelSize(0.1);
+  from_eta->GetYaxis()->CenterTitle();
+  //ratio_eta->GetYaxis()->CenterTitle();
+
+  // x axis
+  from_eta->GetXaxis()->SetLabelSize(0.0);
+  from_eta->GetXaxis()->SetTitleSize(0.0);
+  ratio_eta->GetXaxis()->SetLabelSize(0.12);
+  ratio_eta->GetXaxis()->SetTitleSize(0.14);
+  ratio_eta->GetXaxis()->CenterTitle();
+  
+  //ratio_eta->G
+  Double_t xrange = ratio_eta->GetHistogram()->GetBinLowEdge(101);
+  TLine *line1 = new TLine(0,1,xrange,1);
+  TLine *line10 = new TLine(0,10,xrange,10);
+  TLine *line01 = new TLine(0,0.1,xrange,0.1);
+  line1->SetLineStyle(7);
+  line10->SetLineStyle(7);
+  line01->SetLineStyle(7);
+
+  // line drawing
+  if ( detector != "dune" ) {
+    line1->Draw("same");
+    if ( ratio_eta->GetMaximum() > 10 ) {
+      line10->Draw("same");
+    }
+    if ( ratio_eta->GetMinimum() < 0.1 ) {
+      line01->Draw("same");
+    }
+  }
+  ratio_eta->Draw("same P"); // redraw points on top of lines
+  ratio_pi0->Draw("same P"); // redraw points on top of lines
+
+  // save
+  c3->SaveAs("img/2padDifferenceAccepted_"+detector+"_"+weight_tstring+".pdf");
+
+
+  
   /*
 ** pi0
 0.020130110267451286, 29053078518.935688

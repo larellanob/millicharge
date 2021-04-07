@@ -31,6 +31,16 @@ Double_t I3ZhenLiu(Double_t *t, Double_t *par ) {
   double Ml2 = Ml*Ml;
   double MP2 = MP*MP;
   return (1.0/q2) *  sqrt(1.0-((4.0*Ml2)/q2)) * (1.0+2.0*(Ml2/q2))
+    * pow((1.0-(q2/MP2)),3);
+}
+
+Double_t I3ZhenLiuFormFactors(Double_t *t, Double_t *par ) {
+  double q2 = t[0]; // integration variable
+  double Ml = par[0]; // mCP mass (lepton)
+  double MP = par[1]; // meson mass (Pseudoscalar meson)
+  double Ml2 = Ml*Ml;
+  double MP2 = MP*MP;
+  return (1.0/q2) *  sqrt(1.0-((4.0*Ml2)/q2)) * (1.0+2.0*(Ml2/q2))
     * pow((1.0-(q2/MP2)),3) * FormFactor(q2,MP);
 }
 
@@ -59,6 +69,7 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
   //Double_t alpha = 1.;
 
 
+  // zhen liu mode (ornella paper)
   Double_t mass_ele = pdgCrossSection.GetParticle(11)->Mass();
   TF1 *fZhenMCP = new TF1("I3ZhenMCP",I3ZhenLiu,4.0*mass_mcp*mass_mcp,mass_mes*mass_mes,2);
   TF1 *fZhenEle = new TF1("I3ZhenEle",I3ZhenLiu,4.0*mass_ele*mass_ele,mass_mes*mass_mes,2);
@@ -70,6 +81,11 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
   Double_t iZhenMCP = fZhenMCP->Integral(4.0*mass_mcp*mass_mcp,mass_mes*mass_mes);
   Double_t iZhenEle = fZhenEle->Integral(4.0*mass_ele*mass_ele,mass_mes*mass_mes);
   
+
+  // t2k calculation (includes form factors)
+  TF1 *ft2kMCP = new TF1("ft2kMCP",I3ZhenLiuFormFactors,4.0*mass_mcp*mass_mcp,mass_mes*mass_mes,2);
+  ft2kMCP->SetParameters(mass_mcp,mass_mes);
+  Double_t it2k = ft2kMCP->Integral(4.0*mass_mcp*mass_mcp,mass_mes*mass_mes);
   
   Double_t BRMesonPhotonPhoton;
   Double_t BRMesonDalitz;
@@ -102,18 +118,14 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
     // eq. (2) in PhysRevD is different from arXiv!!
     return epsilon*epsilon*BRMesonPhotonPhoton*alpha*i2;
   } else if ( mode == "zhenliu" ) {
-    //return 2.0*BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon;
-    /*
-    cout << "Integral check: Dalitz from gamma gamma:" << endl;
-    cout << (2.0*alpha)/(3.0*TMath::Pi()) * iZhenEle * BRMesonPhotonPhoton << endl;
-    cout << "CrossSection.cxx Result: "
-	 << 2.0*BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon << endl;
-    */
-    //cout << "FORMFACTOR " << FormFactor << endl;
-    
-    //return 2.0*BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon*FormFactor;
-    return 2.0*BRMesonPhotonPhoton*((2.0*alpha)/(3.0*TMath::Pi()))*(iZhenMCP)*epsilon*epsilon;//*FormFactor;
-    // the 2.0 factor is not due to particle/antiparticle
+    // the 2.0 factor in email is due to particle/antiparticle
+    // factor (2*alpha/3 *pi) cancels in the division
+    // does the epsilon*epsilon cancel?? it should as it goes with alpha
+    //return BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon;
+    return BRMesonDalitz*(iZhenMCP/iZhenEle)*epsilon*epsilon;
+  } else if ( mode == "t2k" ) {
+    // they plot only Br and set epsilon*epsilon = 1
+    return BRMesonPhotonPhoton * ( (2.0*alpha) / (3.0*TMath::Pi()) ) * it2k;
   }
   else {
     cout << "ERROR CrossSection.cxx: no mode selected" << endl;
