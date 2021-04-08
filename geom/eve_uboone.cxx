@@ -1,4 +1,4 @@
-#include "UbooneAcceptanceChecker.cxx"
+#include "../UbooneAcceptanceChecker.cxx"
 const char* esd_geom_file_name =
    "/home/luciano/Physics/neutrino/millicharge/geom/uboone_numi.root";
 
@@ -107,10 +107,10 @@ void eve_uboone(TString fstr ="../sim/mCP_q_0.010_m_0.020_fhc_pi0s.root" )
   int events = 0;
   while ( reader.Next() ) {
     events++;
-    if ( events < 100000 ) {
+    //if ( events < 100000 ) {
       //cout  << Pt << endl;
-    } else break;
-    if ( UbooneAcceptanceChecker(Pos->Vect(),Mom->Vect()) == true) {
+    //} else break;
+    if ( UbooneAcceptanceChecker(Pos->Vect(),Mom->Vect()) > 0) {
       TVector3 Mom3 = Mom->Vect();
       Mom3 = rot*Mom3.Unit();
       TEveVector trackDir(Mom3.X(), Mom3.Y() ,Mom3.Z());
@@ -129,7 +129,7 @@ void eve_uboone(TString fstr ="../sim/mCP_q_0.010_m_0.020_fhc_pi0s.root" )
       Float_t length = 70000;
       
       TEveVector trackEnd = beamposeve + trackDir * length;
-      tracksXYZ->AddLine(beampos.X(), beampos.Y(), beampos.Z(), trackEnd.fX, trackEnd.fY, trackEnd.fZ );
+      //tracksXYZ->AddLine(beampos.X(), beampos.Y(), beampos.Z(), trackEnd.fX, trackEnd.fY, trackEnd.fZ );
       
     }
 

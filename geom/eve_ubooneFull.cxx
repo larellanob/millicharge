@@ -1,4 +1,4 @@
-#include "ubooneGeo.cxx"
+#include "UbooneAcceptanceChecker.cxx"
 const char* esd_geom_file_name =
    "/home/luciano/Physics/neutrino/millicharge/geom/uboone_numi.root";
 
