@@ -20,6 +20,7 @@ void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
     detector_formal = "ArgoNeuT";
   } else if ( detector == "t2k" ) {
     detector_formal = "T2K";
+    WEIGHT = 6;
   } else {
     detector_formal = detector;
   }

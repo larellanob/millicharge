@@ -5,10 +5,12 @@
 // or the PhysRevD associated with it
 #include "CrossSection.cxx"
 
-#include "ubooneGeo.cxx"
+#include "UbooneAcceptanceChecker.cxx"
 
 
-Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboone")
+Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root",
+			  int WEIGHT = 5,
+			  TString detector = "uboone")
 {
   // opens files containing mCP particles
   TFile *f  = new TFile(fstr);
@@ -64,6 +66,29 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboo
     theta = atan2(5,679);
   }
 
+  TTreeReader reader_meta("Metadata",f);
+  TTreeReaderValue<Double_t> mass(reader_meta,"mCPmass");
+  TTreeReaderValue<Double_t> charge(reader_meta,"mCPcharge");
+  // the generated mCP files have one cross section but that's not
+  // necesairly what needs to be used
+  TTreeReaderValue<Double_t> xsec(reader_meta,"CrossSection"); 
+  TTreeReaderValue<TString> meson(reader_meta,"Mother");
+  TTreeReaderValue<TString> mode(reader_meta,"HornMode");
+  reader_meta.Next();
+
+
+  // accepted tfile name
+  /*
+  TString AccTFileName =
+    Form("sim/Acc_mCP_q_%0.3f_m_%0.3f_%s.root",*charge,*mass,*mode);
+  TFile *g = new TFile(AccTFileName,"recreate");
+  TTree *AccMetadata = 
+  */
+
+  TH1 * AccE = new TH1F("AccE", "mCPs through detector;Energy (GeV);Entries (unweighted)", 30,0,120);
+  TH1 * AccL = new TH1F("AccL", "Detector distance crossed;Distance (cm);Entries (unweighted)", 30,0,600);
+  TH1 * AccEw = new TH1F("AccEw", "mCPs through detector;Energy (GeV);Entries (weighted)", 30,0,120);
+  TH1 * AccLw = new TH1F("AccLw", "Detector distance crossed;Distance (cm);Entries (weighted)", 30,0,600);
   
   // event loop
   while ( reader.Next() ) {
@@ -108,6 +133,8 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboo
       value3+= (*weight_meson)*(*weight_decay);
       value2+= (*weight_meson);
       value1++;
+      AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
+      AccE->Fill(Mom->E());
     }
 
     if ( detector ==  "naiveuboone" &&
@@ -116,28 +143,29 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboo
       value3+= (*weight_meson)*(*weight_decay);
       value2+= (*weight_meson);
       value1++;
+      AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
+      AccE->Fill(Mom->E());
     }
 
     // uses ubooneGeo.cxx to check uboone mCP hit
-    if ( detector == "uboone" && ubooneGeo(Pos->Vect(),Mom->Vect()) == true) {
+    if ( detector == "uboone" ) {
+      Double_t travelled = UbooneAcceptanceChecker(Pos->Vect(),Mom->Vect());
+      if ( travelled == 0 ) {
+	continue;
+      }
       value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
       value3+= (*weight_meson)*(*weight_decay);
       value2+= (*weight_meson);
       value1++;
+      AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
+      AccLw->Fill(travelled,(*weight_meson)*(*weight_decay));
+      AccE->Fill(Mom->E());
+      AccL->Fill(travelled);
     }
     
   }
+
   
-  TTreeReader meta("Metadata",f);
-  TTreeReaderValue<Double_t> mass(meta,"mCPmass");
-  TTreeReaderValue<Double_t> charge(meta,"mCPcharge");
-  // the generated mCP files have one cross section but that's not
-  // necesairly what needs to be used
-  TTreeReaderValue<Double_t> xsec(meta,"CrossSection"); 
-  TTreeReaderValue<TString> meson(meta,"Mother");
-  meta.Next();
-
-
   cout << "============ AcceptedArgoneut.cxx output: ============" << endl;
   cout << "******************************************************" << endl;
   cout << Form("Decays of %s into mCPs of mass %.3f and charge %.3f",
@@ -147,7 +175,17 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboo
   cout << Form("finished looping %i events",events) << endl;
 
 
+  // Accepted histograms
+  TString AccHistoFilename =
+    Form("hist/Acc_%s_q_%0.3f_m_%0.3f_%s_%ss.root",
+	 detector.Data(),*charge,*mass,mode->Data(),meson->Data());
+  TFile *AccFileOut = new TFile(AccHistoFilename,"recreate");
+  AccEw->Write();
+  AccLw->Write();
+  AccE->Write();
+  AccL->Write();
 
+  
   // cross section correction
   TDatabasePDG pdg;
   double mesonmass = 0;
@@ -195,9 +233,16 @@ Double_t AcceptedArgoneut(TString fstr, int WEIGHT = 1, TString detector = "uboo
   } else if ( WEIGHT == 4 ) {
     result = POT_norm*value4*(events/sum_weight_decay); // differential cross section
   } else if ( WEIGHT == 5 ) {
-    //result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
-    result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_physrevd;
-    cout << "USING DECAY FACTOR decay_factor_physrevd" << endl;
+    if ( detector == "argoneut" || detector == "duneOrnella" ) {
+      result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
+      cout << "USING DECAY FACTOR decay_factor_zhenliu" << endl;
+    } else if ( detector == "uboone" || detector == "dune" || detector == "naiveuboone" ) { 
+      result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_physrevd;
+      cout << "USING DECAY FACTOR decay_factor_physrevd" << endl;
+    } else {
+      result = 0;
+      cout << "USING DECAY FACTOR NULL"  << endl;
+    }
   } else if ( WEIGHT == 6 ) {
     result = decay_factor_t2k;
   }
