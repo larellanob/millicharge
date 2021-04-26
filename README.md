@@ -2,9 +2,8 @@
 
 Millicharge (mCP) particle analysis for microboone.
 
-So far this only tries to reproduce the theoretical geometrical
-acceptance in the ArgoNeuT detector as shown in
-[[1]](https://arxiv.org/abs/1902.03246).
+This analysis aims to reproduce the methods and follow the search
+strategy outlined in [[1]](https://arxiv.org/abs/1902.03246).
 
 # Quick start guide
 
@@ -18,26 +17,30 @@ acceptance in the ArgoNeuT detector as shown in
 1. Use [`txt24v.cxx`](txt24v.cxx) to generate ROOT files from the
    initial text files.
 
-2. Use [`DecayToMCP.cxx`](DecayToMCP.cxx) to generate mCP particles of
+2. Use [`GenerateMcps.cxx`](GenerateMcps.cxx) to generate mCP particles of
    specified mass and charge. A `bash` script is provided in
-   [`run_DecayToMCP.sh`](run_DecayToMCP.sh) to generate the values to
+   [`run_GenerateMcps.sh`](run_GenerateMcps.sh) to generate the values to
    be plotted, so you only need to run
-   >bash ./run_DecayToMCP.sh
+   >bash ./run_GenerateMcps.sh
 
-3. Run [`AcceptedArgoneut.cxx`](AcceptedArgoneut.cxx) to obtain a
-   single value, or better yet run
-   [`PlotAcceptedArgoneut.cxx`](PlotAcceptedArgoneut.cxx) to run all
-   mass values and generate the plots.
+3. Run [`FilterAccepted.cxx`](FilterAccepted.cxx) to filter the mCPs
+   which pass through the uboone detector, or better yet run
+   [`run_FilterAccepted.sh`](run_FilterAccepted.sh) to run all mass
+   values. Other detector geometries are also possible to validate the
+   flux results with different publications.
 
-   ArgoNeuT plot (not matching published results) is obtained running
+   ~~ArgoNeuT plot (not matching published results) is obtained running~~
+   **Broken for the moment!**
 
-   > root -l -b -q PlotAcceptedArgoneut.cxx(3)
+   > root -l -b -q FilterAccepted.cxx(3)
    
    DUNE plot (matching published results) is obtained with 
 
-   > root -l -b -q PlotAcceptedArgoneut.cxx(3,true)
+   > root -l -b -q FilterAccepted.cxx(3,true)
 
 # Detailed info
+
+  **Not quite up to date!**
 
 ## Simulation files for pi0 and eta produced in the NuMI target
 
@@ -62,7 +65,7 @@ acceptance in the ArgoNeuT detector as shown in
    the mCP pair is stored as TLorentzVector objects in the `sim`
    directory.
 
-   The decay is performed using [`DecayToMCP.cxx`](DecayToMCP.cxx),
+   The decay is performed using [`GenerateMcps.cxx`](GenerateMcps.cxx),
    which takes as argument the meson type (pi0 or eta) and horn mode
    (fhc or rhc), and the mass and charge of the mCPs to be
    generated. It calls [`CrossSection.cxx`](CrossSection.cxx) and
@@ -114,7 +117,7 @@ acceptance in the ArgoNeuT detector as shown in
 ## Plotting
 
    Finally, plotting is done using
-   [`PlotAcceptedArgoneut.cxx`](PlotAcceptedArgoneut.cxx). This can
+   [`PlotAcceptedVariables.cxx`](PlotAcceptedVariables.cxx). This can
    either recalculate the decay fraction and save the data points in
    `hist/` or it can just read from these saved data points and just
    plot by entering a negative value in the `WEIGHT` argument. The
