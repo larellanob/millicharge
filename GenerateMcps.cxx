@@ -8,7 +8,7 @@ if ( kTest ) {
   kWriteFile = false;
  }
 
-void DecayToMCP(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
+void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
   // decay parameters
   //Double_t mCPmass   = 0.01;   // GeV

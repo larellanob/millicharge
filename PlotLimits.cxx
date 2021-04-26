@@ -47,9 +47,9 @@ Double_t nbkghits(Double_t empty, Int_t hits, double frames)
   return frames * exp(-phit) * sum;
 }
 
-Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root",
-			  int WEIGHT = 5,
-			  TString detector = "uboone")
+void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
+		int WEIGHT = 5,
+		TString detector = "uboone")
 {
   cout << "initial " << endl;
   // opens files containing mCP particles
@@ -71,40 +71,10 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
   Double_t sum_weight_meson = 0;
   Double_t sum_diff_xsec = 0;
 
-  Double_t xdev;
-  Double_t ydev;
-
-
-  if ( detector == "dune" ) {
-    // DUNE geometry
-    // fermini group: Phys. Rev. D 100, 015043
-    xdev = 0.5/574.;
-    ydev = 0.5/574.;
-  }
-
-  if ( detector == "argoneut" ) {
-    // argoneut group: arXiv:1902.03246
-    xdev = 0.235/975.;
-    ydev = 0.2/975.;
-  }
-
-  if ( detector == "duneOrnella" ) {
-    // DUNE geometry
-    // argoneut group: arXiv:1902.03246
-    xdev = 1.5/574.;
-    ydev = 2.0/574.;
-  }
-
   // uboone position wrt numi target (in cm)
   const TVector3 uboonepos(31387.58422,
 			   3316.402543,
 			   60100.2414); // proton on target in uboone coords * cm
-  Double_t theta;
-  if ( detector == "naiveuboone" ) {
-    // naive approximation to uboone geometry
-    // circle of radius 5m a distance 679m from target
-    theta = atan2(5,679);
-  }
 
   TTreeReader reader_meta("Metadata",f);
   TTreeReaderValue<Double_t> mass(reader_meta,"mCPmass");
@@ -117,19 +87,13 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
   reader_meta.Next();
 
 
-  // accepted tfile name
-  /*
-  TString AccTFileName =
-    Form("sim/Acc_mCP_q_%0.3f_m_%0.3f_%s.root",*charge,*mass,*mode);
-  TFile *g = new TFile(AccTFileName,"recreate");
-  TTree *AccMetadata = 
-  */
-
   TH1 * AccE = new TH1F("AccE", "mCPs through detector;Energy (GeV);Entries (unweighted)", 30,0,12);
   TH1 * AccL = new TH1F("AccL", "Detector distance crossed;Distance (cm);Entries (unweighted)", 30,0,600);
   TH1 * AccEw = new TH1F("AccEw", "mCPs through detector;Energy (GeV);Entries (weighted)", 30,0,12);
   TH1 * AccLw = new TH1F("AccLw", "Detector distance crossed;Distance (cm);Entries (weighted)", 30,0,600);
 
+
+  // vertical axis of limits plot
   Float_t charges[29] = {
 			 1e-4, 2e-4, 3e-4, 4e-4, 5e-4, 6e-4, 7e-4, 8e-4, 9e-4,
 			 1e-3, 2e-3, 3e-3, 4e-3, 5e-3, 6e-3, 7e-3, 8e-3, 9e-3, 
@@ -137,6 +101,7 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
 			 1e-1, 2e-1
   };
 
+  // different limits for 1-hit, 2-hit, 3-hit, 4-hit
   Float_t probs1hit[29];
   Float_t probs2hit[29];
   Float_t probs3hit[29];
@@ -153,110 +118,55 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
   while ( reader.Next() ) {
     events++;
 
-    // transverse momentum and angle
-    Double_t Pt = sqrt(Mom->Px()*Mom->Px() + Mom->Py()*Mom->Py());
-    Double_t Th = atan2(Pt,Mom->Pz());
-    
-    /*
-    if ( events < 5 ) {
-      //cout  << Pt << endl;
-    } else break;
-    */
-
-    // if they pass, compute integral
+    // event weights
     sum_weight_decay += *weight_decay;
     sum_weight_meson += *weight_meson;
     sum_diff_xsec += *diff_xsec;
     
-    // "angular acceptance"
-    // this is a 'circular detector' approximation used on Friday 12 March 2021
-    /*
-    if ( Mom->Theta() <  0.00019344230 ) {
-      //value2+= (*weight_meson);
-      //value3+= (*weight_meson)*(*weight_decay);
-      value1++;
-    }
-    */
-
-    // "cartesian acceptance"
-    // closer 'rectangular detector' approximation
-    // they use 975m as the distance to the target in the paper
-
-
-    if ( ( detector ==  "dune" || detector == "argoneut" || detector == "duneOrnella" ) &&
-	 //abs(atan2(Mom->Px(),Mom->Pz())) < xdev &&
-	 //abs(atan2(Mom->Py(),Mom->Pz())) < ydev ) {
-	 abs(Mom->Px()/Mom->Pz()) < xdev &&
-	 abs(Mom->Py()/Mom->Pz()) < ydev ) {
-      value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
-      value3+= (*weight_meson)*(*weight_decay);
-      value2+= (*weight_meson);
-      value1++;
-      AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
-      AccE->Fill(Mom->E());
-    }
-
-    if ( detector ==  "naiveuboone" &&
-	 Mom->Angle(uboonepos) <  theta ) {
-      value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
-      value3+= (*weight_meson)*(*weight_decay);
-      value2+= (*weight_meson);
-      value1++;
-      AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
-      AccE->Fill(Mom->E());
-    }
-
-    // uses UbooneAcceptanceChecker.cxx to check uboone mCP hit
-    if ( detector == "uboone" ) {
-      Double_t travelled = UbooneAcceptanceChecker(Pos->Vect(),Mom->Vect());
-      if ( travelled == 0 ) {
-	continue;
-      }
-      value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
-      value3+= (*weight_meson)*(*weight_decay);
-      value2+= (*weight_meson);
-      value1++;
-      AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
-      AccLw->Fill(travelled,(*weight_meson)*(*weight_decay));
-      AccE->Fill(Mom->E());
-      AccL->Fill(travelled);
-      cout << *event << " ";
-      // DetectorInteraction returns the energy of the recoil electron
-      // will be useful later
-      //DetectorInteraction(Mom->E(),Mom->M(),*charge);
-
-
-      // here I have to loop ever charges, not just use *charge
-      // travelled from cm to km
-      travelled *= 0.00001;
-      for ( int i = 0; i < 29; i++ ) {
-	Double_t meanpath = mean_path(charges[i],0.001);
-	/*
-	if ( travelled/meanpath > 0.01 ) {
-	  cout << Form("WARNING: mean path (%.3f) close to travel length (%.3f) for charge %.3f",meanpath,travelled,charges[i]) << endl;
-	}
-	*/
-	
-	probs1hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,1);
-	probs2hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,2);
-	probs3hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,3);
-	probs4hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,4);
-      }
-      //break;
-      //return 0;
-    }
     
+    Double_t travelled = UbooneAcceptanceChecker(Pos->Vect(),Mom->Vect());
+    
+    value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
+    value3+= (*weight_meson)*(*weight_decay);
+    value2+= (*weight_meson);
+    value1++;
+    AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
+    AccLw->Fill(travelled,(*weight_meson)*(*weight_decay));
+    AccE->Fill(Mom->E());
+    AccL->Fill(travelled);
+    
+    // DetectorInteraction returns the energy of the recoil electron
+    // will be useful later
+    //DetectorInteraction(Mom->E(),Mom->M(),*charge);
+    
+
+    // here I have to loop ever charges, not just use *charge
+    // travelled from cm to km
+    travelled *= 0.00001;
+    for ( int i = 0; i < 29; i++ ) {
+      Double_t meanpath = mean_path(charges[i],0.001);
+      /*
+	if ( travelled/meanpath > 0.01 ) {
+	cout << Form("WARNING: mean path (%.3f) close to travel length (%.3f) for charge %.3f",meanpath,travelled,charges[i]) << endl;
+	}
+      */
+	
+      probs1hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,1);
+      probs2hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,2);
+      probs3hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,3);
+      probs4hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,4);
+    }
   }
 
   
-  cout << "============ AcceptedArgoneut.cxx output: ============" << endl;
+  cout << "============ PlotLimits.cxx output: ============" << endl;
   cout << "******************************************************" << endl;
   cout << Form("Decays of %s into mCPs of mass %.3f and charge %.3f",
 	       meson->Data(),*mass,*charge) << endl;
   cout << "         Using "+detector+" geometry and POTs" << endl;
   cout << "******************************************************" << endl;
   cout << Form("finished looping %i events",events) << endl;
-
+  
 
   // Accepted histograms
   TString AccHistoFilename =
@@ -332,7 +242,6 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
 
   // DO LIMITS
   // UNCOMMENT
-  /*  
   TFile *LimitsFileUpdate = new TFile("hist/Lim_uboone.root","update");
   TH2F * lim1hit;
   lim1hit = (TH2F*)gDirectory->Get("lim1hit");
@@ -342,7 +251,8 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
   lim3hit = (TH2F*)gDirectory->Get("lim3hit");
   TH2F * lim4hit;
   lim4hit = (TH2F*)gDirectory->Get("lim4hit");
-  */
+
+  // this are the axes of the limit plot as reference
   /*
   const Float_t xaxis[29] = {9.5,15,25,35,45,55,65,75,85,95,
 		       150,250,350,450,550,650,750,850,950,
@@ -364,7 +274,9 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
   TH2 * lim4hit = new TH2F("lim4hit",";m_{#chi} (GeV);#epsilon",28,xaxis,29,yaxis);
   */
 
-  /*
+
+  // add points for this mass to the limits plot
+
   for ( int i = 0; i < 29; i++ ) {
     lim1hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs1hit[i]);
     lim2hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs2hit[i]);
@@ -401,7 +313,7 @@ Double_t AcceptedArgoneut(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root"
   cout << "geometrical acceptance " << value3/(sum_weight_decay) << endl;
   cout << "result " << result << endl;
   cout << "----------------------------------" << endl;
-  */
+
   return result;
 
 

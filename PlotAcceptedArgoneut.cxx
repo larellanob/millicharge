@@ -8,7 +8,7 @@ void LatexText(Double_t x, Double_t y, int font, TString text)
   l2.DrawLatex(x,y,text);
 }
 
-void PlotAcceptedArgoneut(int WEIGHT = 0, TString detector = "uboone")
+void PlotAcceptedArgoneut(int WEIGHT = 5, TString detector = "uboone")
 {
 
   TString detector_formal;
