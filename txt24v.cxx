@@ -1,12 +1,28 @@
-void txt24v(TString meson ="pi0",TString horn = "fhc") {
-  //TString txtfile = "/home/luciano/Physics/neutrino/test_millicharge/fhc_pi0s.dat";
-
-  cout << "Generating tree from text files for "+meson+"s in horn mode "+horn << endl;
+void txt24v(TString txtfile) {
+  // files originally located in 
+  // /afs/hep.man.ac.uk/d/lartpc-RanD/millicharge/meson_flux/;
   
-  //TString meson = "pi0";
-  //TString horn = "fhc";
+  TString meson, horn;
+   if ( txtfile.Contains("pi0") ) {
+    meson = "pi0";
+  } else if ( txtfile.Contains("eta") ) {
+    meson = "eta";
+  }
+  if ( txtfile.Contains("fhc") ) {
+    horn = "fhc";
+  } else if ( txtfile.Contains("rhc") ) {
+    horn = "rhc";
+  }
+
+  if ( meson == "" || horn == "" ) {
+    std::cout << "Can't understand file input" << std::endl;
+    return;
+  }
+  
+  std::cout << "Generating tree from text files for "+meson+"s in horn mode "+horn;
+  std::endl;
+     
   TString mode = horn+"_"+meson+"s";
-  TString txtfile = "/afs/hep.man.ac.uk/d/lartpc-RanD/millicharge/meson_flux/"+mode+".dat";
   ifstream in;
   in.open(Form("%s",txtfile.Data()));
   
