@@ -20,9 +20,9 @@ Double_t prob_hit_fix(Double_t mean_path, Double_t Length, Int_t hits)
   Double_t DeltaL = Length/subdivisions;
   return TMath::Binomial(subdivisions,hits) * pow(DeltaL/mean_path,hits)* pow(DeltaL/mean_path,subdivisions-hits);
 }
-Double_t prob_hit_fix2(Double_t mean_path, Double_t Length, Int_t hits)
+Double_t prob_hit_fix2(Double_t mean_path, Double_t Length, Int_t hits, Int_t subdivisions = 1000)
 {
-  Int_t subdivisions = 1000;
+  //Int_t subdivisions = 1000;
   Double_t DeltaL = Length/subdivisions;
   return TMath::Binomial(subdivisions,hits) * pow(DeltaL/mean_path,hits);
 }
@@ -31,12 +31,12 @@ Double_t prob_hit_fix2(Double_t mean_path, Double_t Length, Int_t hits)
 Double_t nbkghits(Double_t empty, Int_t hits, double frames)
 {
   // usage example
-  //cout << nbkghits(0.88,1,3.26e6) << endl;
+  //std::cout << nbkghits(0.88,1,3.26e6) << std::endl;
   //return 0;
   
   // empty = percentage of empty frames
   if ( empty > 1 ) {
-    cout << "ERROR: can't have that many empty frames " << endl;
+    std::cout << "ERROR: can't have that many empty frames " << std::endl;
     return 0;
   }
   double phit = -log(empty);
@@ -46,7 +46,7 @@ Double_t nbkghits(Double_t empty, Int_t hits, double frames)
 
   // summing, convergence for 0.00001
   while ( abs(oldsum-sum) > 0.00001 ) {
-    cout << "sum " << sum << endl;
+    std::cout << "sum " << sum << std::endl;
     oldsum = sum;
     sum += TMath::Binomial(n,hits)*pow(phit,n)/TMath::Factorial(n);
     n++;
@@ -58,7 +58,7 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 		TString detector = "uboone")
 {
   CreateEmptyDirs();
-  cout << "initial " << endl;
+  std::cout << "initial " << std::endl;
   // opens files containing mCP particles
   TFile *f  = new TFile(fstr);
   TTreeReader reader("mCP",f);
@@ -154,23 +154,18 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
     // here I have to loop ever charges, not just use *charge
     // travelled from cm to km
     travelled *= 0.00001;
-    std::cout << "---------" << std::endl;
-    std::cout << "---------" << std::endl;
-    std::cout << "---------" << std::endl;
-    std::cout << "event: " << events << std::endl;
     for ( int i = 0; i < 29; i++ ) {
       Double_t meanpath = mean_path(charges[i],0.0008);
       /*
-	if ( travelled/meanpath > 0.01 ) {
-	cout << Form("WARNING: mean path (%.3f) close to travel length (%.3f) for charge %.3f",meanpath,travelled,charges[i]) << endl;
-	}
+      if ( travelled/meanpath > 0.01 ) {
+	std::cout << Form("WARNING: mean path (%.3f) close to travel length (%.3f) for charge %.3f",meanpath,travelled,charges[i]) << std::endl;
+	std::cout << "Prob 1hit 1 2 3 " << prob_hit(meanpath,travelled,1) << " " << prob_hit_fix(meanpath,travelled,1) << " " << prob_hit_fix2(meanpath,travelled,1) << std::endl;
+	std::cout << "Prob 2hit 1 2 3 " << prob_hit(meanpath,travelled,2) << " " << prob_hit_fix(meanpath,travelled,2) << " " << prob_hit_fix2(meanpath,travelled,2) << std::endl;
+	std::cout << "Prob 3hit 1 2 3 " << prob_hit(meanpath,travelled,3) << " " << prob_hit_fix(meanpath,travelled,3) << " " << prob_hit_fix2(meanpath,travelled,3) << std::endl;
+	std::cout << "Prob 4hit 1 2 3 " << prob_hit(meanpath,travelled,4) << " " << prob_hit_fix(meanpath,travelled,4) << " "
+		  << prob_hit_fix2(meanpath,travelled,4, 10) << " " << prob_hit_fix2(meanpath,travelled,4, 1000) << " " << prob_hit_fix2(meanpath,travelled,4, 1000000) << std::endl;
+      }
       */
-      std::cout << "charge bin " << i << " ";
-      std::cout << "charge " << charges[i] << " ";
-      std::cout << "meanpath " << meanpath << " "<< std::endl;
-      std::cout << "prob 1-hit " << prob_hit(meanpath,travelled,1) << std::endl;
-      std::cout << "prob 1-hit FIX " << prob_hit_fix(meanpath,travelled,1) << std::endl;
-      std::cout << "prob 1-hit FIX2 " << prob_hit_fix2(meanpath,travelled,1) << std::endl;
       probs1hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,1);
       probs2hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,2);
       probs3hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,3);
@@ -179,13 +174,13 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   }
 
   
-  cout << "============ PlotLimits.cxx output: ============" << endl;
-  cout << "******************************************************" << endl;
-  cout << Form("Decays of %s into mCPs of mass %.3f and charge %.3f",
-	       meson->Data(),*mass,*charge) << endl;
-  cout << "         Using "+detector+" geometry and POTs" << endl;
-  cout << "******************************************************" << endl;
-  cout << Form("finished looping %i events",events) << endl;
+  std::cout << "============ PlotLimits.cxx output: ============" << std::endl;
+  std::cout << "******************************************************" << std::endl;
+  std::cout << Form("Decays of %s into mCPs of mass %.3f and charge %.3f",
+	       meson->Data(),*mass,*charge) << std::endl;
+  std::cout << "         Using "+detector+" geometry and POTs" << std::endl;
+  std::cout << "******************************************************" << std::endl;
+  std::cout << Form("finished looping %i events",events) << std::endl;
   
 
   // cross section correction
@@ -202,14 +197,14 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   Double_t decay_factor_t2k = CrossSection(*mass,mesonmass,"t2k");
   Double_t truexsec = *xsec; // no need to recalculate
 
-  cout << "Simulated particles entering detector geometry: " << value1 << endl;
-  cout << "TTree cross section: " << *xsec << endl;
-  cout << "Recalculated cross section: " << truexsec << endl;
-  cout << "Unweighted mCPs passing: " << value1 << endl;
+  std::cout << "Simulated particles entering detector geometry: " << value1 << std::endl;
+  std::cout << "TTree cross section: " << *xsec << std::endl;
+  std::cout << "Recalculated cross section: " << truexsec << std::endl;
+  std::cout << "Unweighted mCPs passing: " << value1 << std::endl;
   
   /*
-  cout << Form("value: %.3f\nPOT normalized value: %.3f\n(old) xsec: %.7f\nsum weight decays: %.3f\nsum weight meson: %.3f",
-	       value1,(1e20/500000.)*value1/(sum_weight_decay*0.5),*xsec,sum_weight_decay/2.,sum_weight_meson/2.) << endl;
+  std::cout << Form("value: %.3f\nPOT normalized value: %.3f\n(old) xsec: %.7f\nsum weight decays: %.3f\nsum weight meson: %.3f",
+	       value1,(1e20/500000.)*value1/(sum_weight_decay*0.5),*xsec,sum_weight_decay/2.,sum_weight_meson/2.) << std::endl;
   */
   Double_t result;
 
@@ -228,13 +223,13 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   
   if ( detector == "argoneut" || detector == "duneOrnella" ) {
     result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
-    cout << "USING DECAY FACTOR decay_factor_zhenliu" << endl;
+    std::cout << "USING DECAY FACTOR decay_factor_zhenliu" << std::endl;
   } else if ( detector == "uboone" || detector == "dune" || detector == "naiveuboone" ) { 
     result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_physrevd;
-    cout << "USING DECAY FACTOR decay_factor_physrevd" << endl;
+    std::cout << "USING DECAY FACTOR decay_factor_physrevd" << std::endl;
   } else {
     result = 0;
-    cout << "USING DECAY FACTOR NULL"  << endl;
+    std::cout << "USING DECAY FACTOR NULL"  << std::endl;
   }
 
 
@@ -390,9 +385,9 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   DrawLimits(lim4hit,4);
 
   
-  cout << "geometrical acceptance " << value3/(sum_weight_decay) << endl;
-  cout << "result " << result << endl;
-  cout << "----------------------------------" << endl;
+  std::cout << "geometrical acceptance " << value3/(sum_weight_decay) << std::endl;
+  std::cout << "result " << result << std::endl;
+  std::cout << "----------------------------------" << std::endl;
 
   return result;
 

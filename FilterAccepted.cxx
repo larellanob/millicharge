@@ -61,6 +61,7 @@ void FilterAccepted(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root",
   
   if ( kTest == true ) {
     rangedDF = df.Range(0,1000);
+    std::cout << "INFO: Running in test mode, stopping at 1000 events" << std::endl;
   }
 
 
@@ -84,13 +85,13 @@ void FilterAccepted(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root",
   auto df_count = rangedDF.Count();
   
   // cout accepted event numbers, if any
+  std::cout << "List of events passing through detector space: " << std::endl;
   if ( *df2_count > 0 ) {
     auto b1Vec = df2->Take<int>("Event");
     if (auto b1List = df2->Take<int, std::list<int>>("Event") ) {
       for (auto b1_entry : *b1List)
 	std::cout << b1_entry << " ";
       std::cout << std::endl;
-      std::cout << "doing fine 2"  << std::endl;
     }
   }
 
@@ -98,9 +99,9 @@ void FilterAccepted(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root",
   //std::cout << mesonCol[0] << endl;
   std::cout << "============= FilterAccepted.cxx output: =============" << std::endl;
   std::cout << "******************************************************" << std::endl;
-  std::cout << Form("Decays of %s into mCPs of mass %.3f and charge %.3f",
+  std::cout << Form("Filtered decays of %s into mCPs of mass GeV %.3f, charge %.3f",
 		    meson.Data(),mass,charge) << std::endl;
-  std::cout << "         Using "+detector+" geometry and POTs" << std::endl;
+  std::cout << "using "+detector+" geometry and POTs" << std::endl;
   std::cout << "******************************************************" << std::endl;
   //std::cout << Form("finished looping %i events",events) << std::endl;
   std::cout << "Passing events: " << *df2_count << ", Parsed events: " << *df_count << std::endl;

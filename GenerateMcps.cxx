@@ -1,17 +1,16 @@
-#include "CrossSection.cxx"
-#include "DiffCrossSection.cxx"
+#include "Root/CrossSection.cxx"
+#include "Root/DiffCrossSection.cxx"
 #include "Root/CreateEmptyDirs.cxx"
 
 const bool kTest = false;
-bool kWriteFile = true;
-// not sure if I can put an if at this point
-if ( kTest ) {
-  kWriteFile = false;
- }
 
-void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
+void GenerateMcps(TString meson ="eta",TString horn = "rhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
   CreateEmptyDirs();
+  bool kWriteFile = true;
+  if ( kTest ) {
+  kWriteFile = false;
+ }
   // decay parameters
   //Double_t mCPmass   = 0.01;   // GeV
   //Double_t mCPcharge = 0.01;   // electron charges
@@ -28,6 +27,10 @@ void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 
     kMesonMass = pdg.GetParticle(221)->Mass();
     kLifetime = 5.0e-19;
   }
+  
+  std::cout << "To generate mCP decaying from "
+	    << Form("%ss in %s horn mode",meson.Data(),horn.Data())
+	    <<std::endl;
 
   /////////
   // input
@@ -42,16 +45,10 @@ void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 
 
   //////////
   // decay
-  // old cross section using eq.(1) arXiv:1806.03310v2
-  /*
-  Double_t fmM = sqrt(1.-(mCPmass*mCPmass)/(kMesonMass*kMesonMass));
-  Double_t branching_ratio = mCPcharge*mCPcharge * 0.01174 * fmM;
-  cout << "Branching ratio " << branching_ratio << endl;
-  */
-  // new cross section using eq.(1) arXiv:1812.03998v2
+  // cross section dedicated macro
   Double_t cross_section = CrossSection(mCPmass,kMesonMass);
   if ( 2*mCPmass > kMesonMass ) {
-    cout << "Forbidden decay, breaking" << endl;
+    std::cout << "ERROR: Kinematically forbidden decay. Aborting." << std::endl;
     return;
   }
 
@@ -61,11 +58,10 @@ void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 
   // output file
   TString out_filename
     = Form("sim/mCP_q_%0.3f_m_%0.3f_%s.root",mCPcharge,mCPmass,mode.Data());
-  TFile g;
-  if ( kWriteFile ) {
-    g.Open(out_filename,"recreate");
-  } else {
-    cout << "NO OUTPUT FILE IS BEING GENERATED" << endl;
+  TFile g(out_filename,"recreate");
+  if ( kWriteFile == false ) {
+    std::cout << "NO OUTPUT FILE IS BEING GENERATED" << std::endl;
+    g.Close();
   }
   //tree->SetDirectory(g); // remember this line in the future!
 
@@ -80,7 +76,7 @@ void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 
   if ( kWriteFile ) {
     meta.Write();
   } else {
-    cout << "NO OUTPUT FILE IS BEING GENERATED" << endl;
+    std::cout << "NO OUTPUT FILE IS BEING GENERATED" << std::endl;
   }
 
   // main mcp particle tree
@@ -102,18 +98,23 @@ void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 
   
   //////////////
   // events loop
+
+  std::cout << "Generating mCPs for "
+	    << Form("mass %0.3f GeV, charge %0.3f epsilon",mCPmass,mCPcharge)
+	    << std::endl;
+  
   int events = 0;
   while ( reader.Next() ) {
     events++;
 
     // print progress at regular intervals
     if ( events % 100000 == 0 ) {
-      cout << events << "/" << TotalEntries << endl;
+      std::cout << Form("Completed %04.1f%% of %lli events",((Double_t)events/TotalEntries)*100,TotalEntries) << "\r" << std::flush;
     }
 
     // do only 5 events if testing
     if ( kTest && events < 5 ) {
-      cout << "Meson Px: " << Mom4v->Px() << endl;
+      std::cout << "Meson Px: " << Mom4v->Px() << std::endl;
     } else if ( kTest && events >= 5 ) {
       break;
     }    
@@ -154,11 +155,12 @@ void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 
   }
 
   // finish message
-  cout << "done: " << events << " events" << endl;
+  std::cout << "Finished looping. Generated: " << events << " pairs" << std::endl;
   // write output
   if ( kWriteFile ) {
-    g->Write();
+    g.Write();
+    std::cout << "Wrote mCPs to file: " << out_filename <<  std::endl;
   } else {
-    cout << "NO OUTPUT FILE IS BEING GENERATED" << endl;
+    std::cout << "NO OUTPUT FILE IS BEING GENERATED" << std::endl;
   }
 }
