@@ -19,8 +19,9 @@ void txt24v(TString txtfile) {
     return;
   }
   
-  std::cout << "Generating tree from text files for "+meson+"s in horn mode "+horn;
-  std::endl;
+  std::cout
+    << "Generating tree from text files for "+meson+"s in horn mode "+horn
+    << std::endl;
      
   TString mode = horn+"_"+meson+"s";
   ifstream in;
