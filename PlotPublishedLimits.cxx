@@ -1,14 +1,14 @@
-Double_t myfunc(Double_t *x, TGraph *tgraph) { return tgraph->Eval(x[0]);}
+#include "Root/CreateEmptyDirs.cxx"
 
 Double_t nbkghits(Double_t empty, Int_t hits, double frames)
 {
   // usage example
-  //cout << nbkghits(0.88,1,3.26e6) << endl;
+  //std::cout << nbkghits(0.88,1,3.26e6) << std::endl;
   //return 0;
   
   // empty = percentage of empty frames
   if ( empty > 1 ) {
-    cout << "ERROR: can't have that many empty frames " << endl;
+    std::cout << "ERROR: can't have that many empty frames " << std::endl;
     return 0;
   }
   double phit = -log(empty);
@@ -18,7 +18,7 @@ Double_t nbkghits(Double_t empty, Int_t hits, double frames)
 
   // summing, convergence for 0.00001
   while ( abs(oldsum-sum) > 0.00001 ) {
-    cout << "sum " << sum << endl;
+    std::cout << "sum " << sum << std::endl;
     oldsum = sum;
     sum += TMath::Binomial(n,hits)*pow(phit,n)/TMath::Factorial(n);
     n++;
@@ -29,7 +29,8 @@ Double_t nbkghits(Double_t empty, Int_t hits, double frames)
 
 void PlotPublishedLimits()
 {
-  const char* dir = "/home/luciano/Physics/neutrino/millicharge/data/limits_argoneut_experiment/";
+  CreateEmptyDirs();
+  const char* dir = "/home/luciano/Physics/neutrino/millicharge/data/limits_argoneut_experiment_12hits/";
   
   //char *dir  = gSystem->ExpandPathName(dir_tstring);
 
@@ -49,12 +50,12 @@ void PlotPublishedLimits()
     full_files.push_back(dir+dir_iteration);
     files.push_back(dir_iteration);
     experiments.push_back(dir_iteration.ReplaceAll(".dat",""));
-    cout << dir+dir_iteration << endl;
+    std::cout << dir+dir_iteration << std::endl;
   }
 
-  cout << "Found limits for the following experiments:" << endl;
+  std::cout << "Found limits for the following experiments:" << std::endl;
   for ( int i = 0; i < experiments.size(); i++ ) {
-    cout << experiments[i] << endl;
+    std::cout << experiments[i] << std::endl;
   }
 
   std::vector<std::vector<Double_t>> experimentsx;
@@ -64,14 +65,14 @@ void PlotPublishedLimits()
 
   for ( int i = 0; i < files.size(); i++ ) {
     Double_t x,y;
-    cout << "opening file " << full_files[i] << endl;
+    std::cout << "opening file " << full_files[i] << std::endl;
     ifstream in;
     in.open(full_files[i]);
     datax.clear();
     datay.clear();
     while (1) {
       in >> x >> y;
-      //cout << x << " " << y << endl;
+      //std::cout << x << " " << y << std::endl;
       datax.push_back(x);
       datay.push_back(y);
       if (!in.good()) break;
@@ -79,7 +80,7 @@ void PlotPublishedLimits()
     experimentsx.push_back(datax);
     experimentsy.push_back(datay);
   }
-  cout << experimentsx[0].size() << endl;
+  std::cout << experimentsx[0].size() << std::endl;
 
 
   std::vector<TGraph *> tgraphs;
@@ -89,24 +90,15 @@ void PlotPublishedLimits()
   }
   
   for ( int exp = 0; exp < experiments.size(); exp++ ) {
-    cout << "Graph " << experiments[exp] << endl;
+    std::cout << "Graph " << experiments[exp] << std::endl;
     for ( int point = 0; point < experimentsx[exp].size(); point++ ){
-      //cout << "point x " << point << " " <<experimentsx[exp][point] << endl;
+      //std::cout << "point x " << point << " " <<experimentsx[exp][point] << std::endl;
       tgraphs[exp]->SetPoint(point, experimentsx[exp][point], experimentsy[exp][point]);
     }
   }
-  /*
-  Int_t e0_size = experimentsx[0].size();
-  Double_t x[e0_size];
-  Double_t y[e0_size];
-  for ( int i = 0; i<e0_size; i++ ) {
-    x[i] = experimentsx[0][i];
-    y[i] = experimentsy[0][i];
-  }
-  */
   
   //TGraph *gr = new TGraph(e0_size,x,y);
-  TFile *f = new TFile("hist/Lim_uboone.root");
+  TFile *f = new TFile("hist/Lim_argoneut.root");
   auto c1 = new TCanvas();
   c1->SetLogy();
   c1->SetLogx();
@@ -125,10 +117,12 @@ void PlotPublishedLimits()
   Double_t threshold = nbkghits(percentage_empty,1,frames);
   Double_t threshold2hit = nbkghits(percentage_empty,2,frames);
 
-  cout << "threshold " << threshold << endl;
+  std::cout << "threshold " << threshold << std::endl;
   TGraph *uboone1hit = new TGraph(8);
   TGraph *uboone2hit = new TGraph(8);
 
+  // x-bin numbers where calculated mass points are stored
+  // 0.01 0.02 0.03 0.05 0.06 0.1 0.2 0.25 GeV
   std::vector<int> massbins =
     {
      1,
@@ -142,67 +136,82 @@ void PlotPublishedLimits()
     };
 
   // argoneut numbers
-  //Double_t resolution_factor = (0.3/470)*(5.6/400);
   Double_t resolution_factor = (0.3/470)*(5.6/400); // put microboone resolution
   
-  cout << "Resolution factor " << resolution_factor << endl;
-  cout << "bkg 2 hits " << threshold2hit << endl;
-  cout << "reduced 2 hit bkg " << resolution_factor*threshold2hit << endl;
+  std::cout << "Resolution factor " << resolution_factor << std::endl;
+  std::cout << "bkg 2 hits " << threshold2hit << std::endl;
+  std::cout << "reduced 2 hit bkg " << resolution_factor*threshold2hit << std::endl;
   int counter = -1;
-  cout << "ok " << endl;
+  std::cout << "ok " << std::endl;
   for ( int x: massbins ) {
     counter++;
+    double centerx = lim1hit->GetXaxis()->GetBinCenter(x);
     bool findlim1hit = true;
     bool findlim2hit = true;
-    for ( int y = 0; y < 29; y++ ) {
 
+    // searches the first point in th2f which is greater than
+    // threshold and sets the limit there (stops searching)
+    for ( int y = 0; y < 29; y++ ) {
       // 1 hit
-      //cout << "x y " << x << " " << y << endl;
       if ( lim1hit->GetBinContent(lim1hit->GetBin(x,y+1)) > threshold  && findlim1hit ) {
-	double centerx = lim1hit->GetXaxis()->GetBinCenter(x);
+	
 	double meany
 	  = 0.5*(lim1hit->GetYaxis()->GetBinCenter(y+1)
 		 + lim1hit->GetYaxis()->GetBinCenter(y));
 	uboone1hit->SetPoint(counter,centerx,meany);
-	cout << lim1hit->GetXaxis()->GetBinCenter(x) << " " << lim1hit->GetYaxis()->GetBinCenter(y+1) << endl;
-	//break;
 	findlim1hit = false; // stop searching
       }
       // 2 hits
-      cout << lim2hit->GetBinContent(lim2hit->GetBin(x,y+1))*resolution_factor << endl;
       if ( lim2hit->GetBinContent(lim2hit->GetBin(x,y+1))*resolution_factor > 3.5 && findlim2hit) {
-	double centerx = lim2hit->GetXaxis()->GetBinCenter(x);
 	double meany
 	  = 0.5*(lim2hit->GetYaxis()->GetBinCenter(y+1)
 		 + lim2hit->GetYaxis()->GetBinCenter(y));
 	uboone2hit->SetPoint(counter,centerx,meany);
-	//break;
-	findlim2hit = false;
+	findlim2hit = false; // stop searching
       }
-      // end of the line
-      //uboone1hit->SetPoint(counter, lim1hit->GetXaxis()->GetBinCenter(x),0.3);
-      //uboone2hit->SetPoint(counter, lim2hit->GetXaxis()->GetBinCenter(x),0.3);
+      // if it's the last point and didn't find limit, set it at the
+      // highest charge (top of y axis)
+      if ( y == 28 ) {
+	double meany
+	  = 0.5*(lim1hit->GetYaxis()->GetBinCenter(y+1)
+		 + lim1hit->GetYaxis()->GetBinCenter(y));
+	if ( findlim1hit == true ) {
+	  // reached the end
+	  std::cout << "Reached the end and didn't find charge limit" << std::endl;
+	  uboone1hit->SetPoint(counter,centerx,meany);
+	}
+	if ( findlim2hit == true ) {
+	  // reached the end
+	  std::cout << "Reached the end and didn't find charge limit" << std::endl;
+	  uboone2hit->SetPoint(counter,centerx,meany);
+	}
+      }
     }
-    cout << endl;
+    
   }
   gStyle->SetOptStat(0);
   lim1hit->SetTitle("1 hit");
   lim1hit->Draw("colz");
   
-
-  uboone1hit->SetLineColor(kBlue);
+  uboone1hit->SetLineColor(kYellow);
   uboone1hit->SetLineWidth(5);
 
-  uboone2hit->SetLineColor(kBlue);
+  uboone2hit->SetLineColor(kGreen);
   uboone2hit->SetLineWidth(5);
   
-  tgraphs[1]->SetLineColor(kRed);
+  tgraphs[1]->SetLineColor(kBlue);
   tgraphs[1]->SetLineWidth(5);
+
+  tgraphs[0]->SetLineColor(kRed);
+  tgraphs[0]->SetLineWidth(5);
 
   tgraphs[1]->Draw("same L");
   uboone1hit->Draw("same L");
 
-  
+  TLegend *myleg;
+  uboone1hit->SetTitle("ArgoNeuT 1 hit our simulation");
+  tgraphs[1]->SetTitle("ArgoNeuT 1 hit published");
+  myleg = c1->BuildLegend(0.6,0.15,0.9,0.35,"","");
   auto c2 = new TCanvas();
   c2->SetLogy();
   c2->SetLogx();
@@ -210,10 +219,9 @@ void PlotPublishedLimits()
   gStyle->SetOptStat(0);
   lim2hit->SetTitle("2 hits");
   lim2hit->Draw("colz");
-  tgraphs[1]->Draw("same L");
+  tgraphs[0]->Draw("same L");
   uboone2hit->Draw("same L");
   
-  //for 
 
   //TF1 * fun = new TF1("fun",[&](double*x, double *p){ return p[0]*tgraphs[1]->Eval(x[0]); }, 2.5, 2.7, 1);
   //fun->Draw();

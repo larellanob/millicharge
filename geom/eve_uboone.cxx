@@ -1,16 +1,17 @@
-#include "../UbooneAcceptanceChecker.cxx"
+#include "../Root/UbooneAcceptanceChecker.cxx"
 const char* esd_geom_file_name =
    "/home/luciano/Physics/neutrino/millicharge/geom/uboone_numi.root";
 
 void geomGentleTPC();
 
-void eve_uboone(TString fstr ="../sim/mCP_q_0.010_m_0.020_fhc_pi0s.root" )
+void eve_uboone(TString fstr ="sim/mCP_uboone_q_0.010_m_0.020_fhc_pi0s.root" )
 {
 
   TEveManager::Create();
 
   gGeoManager =
-    gEve->GetGeometry("/home/luciano/Physics/neutrino/millicharge/geom/uboone_numi.root");
+    //gEve->GetGeometry("/home/luciano/Physics/neutrino/millicharge/geom/uboone_numi.root");
+    gEve->GetGeometry("/home/luciano/Physics/neutrino/millicharge/geom/geom_test.root");
 
   TGeoNode *_wnode = (TGeoNode *)gGeoManager->GetListOfNodes()->At(0);
   TEveGeoTopNode *_node = new TEveGeoTopNode(gGeoManager, _wnode);

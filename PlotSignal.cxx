@@ -1,14 +1,7 @@
-// Reads mCP file in sim/ folder and returns "geometric acceptance"
-// and Number of mCPs through ArgoNeuT
-
-// uses cross section from eq (2) in arXiv:1812.03998v2
-// or the PhysRevD associated with it
 #include "Root/CrossSection.cxx"
-
 #include "Root/UbooneAcceptanceChecker.cxx"
-
 #include "Root/DetectorInteraction.cxx"
-
+#include "Root/CreateEmptyDirs.cxx"
 
 Double_t mean_path(Double_t epsilon, Double_t Emin )
 {
@@ -20,6 +13,20 @@ Double_t prob_hit(Double_t mean_path, Double_t Length, Int_t hits)
 {
   return 1./TMath::Factorial(hits) * pow(Length/mean_path,hits);
 }
+
+Double_t prob_hit_fix(Double_t mean_path, Double_t Length, Int_t hits)
+{
+  Int_t subdivisions = 1000;
+  Double_t DeltaL = Length/subdivisions;
+  return TMath::Binomial(subdivisions,hits) * pow(DeltaL/mean_path,hits)* pow(DeltaL/mean_path,subdivisions-hits);
+}
+Double_t prob_hit_fix2(Double_t mean_path, Double_t Length, Int_t hits)
+{
+  Int_t subdivisions = 1000;
+  Double_t DeltaL = Length/subdivisions;
+  return TMath::Binomial(subdivisions,hits) * pow(DeltaL/mean_path,hits);
+}
+
 
 Double_t nbkghits(Double_t empty, Int_t hits, double frames)
 {
@@ -47,10 +54,10 @@ Double_t nbkghits(Double_t empty, Int_t hits, double frames)
   return frames * exp(-phit) * sum;
 }
 
-void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
-		int WEIGHT = 5,
+void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 		TString detector = "uboone")
 {
+  CreateEmptyDirs();
   cout << "initial " << endl;
   // opens files containing mCP particles
   TFile *f  = new TFile(fstr);
@@ -87,12 +94,6 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   reader_meta.Next();
 
 
-  TH1 * AccE = new TH1F("AccE", "mCPs through detector;Energy (GeV);Entries (unweighted)", 30,0,12);
-  TH1 * AccL = new TH1F("AccL", "Detector distance crossed;Distance (cm);Entries (unweighted)", 30,0,600);
-  TH1 * AccEw = new TH1F("AccEw", "mCPs through detector;Energy (GeV);Entries (weighted)", 30,0,12);
-  TH1 * AccLw = new TH1F("AccLw", "Detector distance crossed;Distance (cm);Entries (weighted)", 30,0,600);
-
-
   // vertical axis of limits plot
   Float_t charges[29] = {
 			 1e-4, 2e-4, 3e-4, 4e-4, 5e-4, 6e-4, 7e-4, 8e-4, 9e-4,
@@ -101,6 +102,11 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 			 1e-1, 2e-1
   };
 
+  // horizontal axis bins
+  // {9.5,15,25,35,45,55,65,75,85,95,
+  //  150,250,350,450,550,650,750,850,950,
+  //  1500,2500,3500,4500,5500,6500,7500,8500,9500,
+  //  10500 }
   // different limits for 1-hit, 2-hit, 3-hit, 4-hit
   Float_t probs1hit[29];
   Float_t probs2hit[29];
@@ -116,8 +122,14 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   
   // event loop
   while ( reader.Next() ) {
-    events++;
 
+    if ( detector == "argoneut_published" ) {
+      break;
+    }
+
+
+    events++;
+    
     // event weights
     sum_weight_decay += *weight_decay;
     sum_weight_meson += *weight_meson;
@@ -125,15 +137,14 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
     
     
     Double_t travelled = UbooneAcceptanceChecker(Pos->Vect(),Mom->Vect());
-    
+    if ( detector == "argoneut" ){
+      // travelled in cm
+      travelled = 90.;
+    }
     value4+= (*weight_meson)*(*weight_decay)*(*diff_xsec);
     value3+= (*weight_meson)*(*weight_decay);
     value2+= (*weight_meson);
     value1++;
-    AccEw->Fill(Mom->E(),(*weight_meson)*(*weight_decay));
-    AccLw->Fill(travelled,(*weight_meson)*(*weight_decay));
-    AccE->Fill(Mom->E());
-    AccL->Fill(travelled);
     
     // DetectorInteraction returns the energy of the recoil electron
     // will be useful later
@@ -143,14 +154,23 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
     // here I have to loop ever charges, not just use *charge
     // travelled from cm to km
     travelled *= 0.00001;
+    std::cout << "---------" << std::endl;
+    std::cout << "---------" << std::endl;
+    std::cout << "---------" << std::endl;
+    std::cout << "event: " << events << std::endl;
     for ( int i = 0; i < 29; i++ ) {
-      Double_t meanpath = mean_path(charges[i],0.001);
+      Double_t meanpath = mean_path(charges[i],0.0008);
       /*
 	if ( travelled/meanpath > 0.01 ) {
 	cout << Form("WARNING: mean path (%.3f) close to travel length (%.3f) for charge %.3f",meanpath,travelled,charges[i]) << endl;
 	}
       */
-	
+      std::cout << "charge bin " << i << " ";
+      std::cout << "charge " << charges[i] << " ";
+      std::cout << "meanpath " << meanpath << " "<< std::endl;
+      std::cout << "prob 1-hit " << prob_hit(meanpath,travelled,1) << std::endl;
+      std::cout << "prob 1-hit FIX " << prob_hit_fix(meanpath,travelled,1) << std::endl;
+      std::cout << "prob 1-hit FIX2 " << prob_hit_fix2(meanpath,travelled,1) << std::endl;
       probs1hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,1);
       probs2hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,2);
       probs3hit[i] += (*weight_meson)*(*weight_decay)*prob_hit(meanpath,travelled,3);
@@ -168,17 +188,6 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   cout << Form("finished looping %i events",events) << endl;
   
 
-  // Accepted histograms
-  TString AccHistoFilename =
-    Form("hist/Acc_%s_q_%0.3f_m_%0.3f_%s_%ss.root",
-	 detector.Data(),*charge,*mass,mode->Data(),meson->Data());
-  TFile *AccFileOut = new TFile(AccHistoFilename,"recreate");
-  AccEw->Write();
-  AccLw->Write();
-  AccE->Write();
-  AccL->Write();
-
-  
   // cross section correction
   TDatabasePDG pdg;
   double mesonmass = 0;
@@ -217,32 +226,21 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   }
 
   
-  if ( WEIGHT == 1 ) {
-    result = POT_norm*(truexsec)*value1; // result uses truexsec
-  } else if ( WEIGHT == 2 ) {
-    result = POT_norm*(truexsec)*value2; // result uses truexsec
-  } else if ( WEIGHT == 3 ) {
-    result = POT_norm*(truexsec)*value3*(events/sum_weight_decay); // result uses truexsec
-  } else if ( WEIGHT == 4 ) {
-    result = POT_norm*value4*(events/sum_weight_decay); // differential cross section
-  } else if ( WEIGHT == 5 ) {
-    if ( detector == "argoneut" || detector == "duneOrnella" ) {
-      result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
-      cout << "USING DECAY FACTOR decay_factor_zhenliu" << endl;
-    } else if ( detector == "uboone" || detector == "dune" || detector == "naiveuboone" ) { 
-      result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_physrevd;
-      cout << "USING DECAY FACTOR decay_factor_physrevd" << endl;
-    } else {
-      result = 0;
-      cout << "USING DECAY FACTOR NULL"  << endl;
-    }
-  } else if ( WEIGHT == 6 ) {
-    result = decay_factor_t2k;
+  if ( detector == "argoneut" || detector == "duneOrnella" ) {
+    result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
+    cout << "USING DECAY FACTOR decay_factor_zhenliu" << endl;
+  } else if ( detector == "uboone" || detector == "dune" || detector == "naiveuboone" ) { 
+    result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_physrevd;
+    cout << "USING DECAY FACTOR decay_factor_physrevd" << endl;
+  } else {
+    result = 0;
+    cout << "USING DECAY FACTOR NULL"  << endl;
   }
+
 
   // DO LIMITS
   // UNCOMMENT
-  TFile *LimitsFileUpdate = new TFile("hist/Lim_uboone.root","update");
+  TFile *LimitsFileUpdate = new TFile("hist/Lim_"+detector+".root","update");
   TH2F * lim1hit;
   lim1hit = (TH2F*)gDirectory->Get("lim1hit");
   TH2F * lim2hit;
@@ -252,6 +250,67 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   TH2F * lim4hit;
   lim4hit = (TH2F*)gDirectory->Get("lim4hit");
 
+
+  if ( detector == "argoneut_published" ) {
+    Double_t meanpath = mean_path(0.01,0.001);
+    Double_t travelled = 90.; // 90cm = z axis detector length
+    travelled*=0.0001; // in km
+    Double_t argo_flux;
+    if ( *mass == 0.01 ) {
+      if ( *meson == "pi0" )
+	argo_flux = 29053078518.935688;
+      if ( *meson == "eta")
+	argo_flux = 1559272026.0810509;
+    }
+    if ( *mass == 0.02 ) {
+      if ( *meson == "pi0" )
+	argo_flux = 29053078518.935688;
+      if ( *meson == "eta")
+	argo_flux = 1559272026.0810509;
+    }
+    if ( *mass == 0.03 ) {
+      if ( *meson == "pi0" )
+	argo_flux = 15592720260.810507;
+      if ( *meson == "eta")
+	argo_flux = 1559272026.0810509;
+    }
+    if ( *mass == 0.05 ) {
+      if ( *meson == "pi0" )
+	argo_flux = 7389202410.398621;
+      if ( *meson == "eta")
+	argo_flux = 1659391704.1669834;
+    }
+    if ( *mass == 0.06 ) {
+      if ( *meson == "pi0" )
+	argo_flux = 1765939991.098824;
+      if ( *meson == "eta")
+	argo_flux = 1659391704.1669834;
+    }
+    if ( *mass == 0.1 ) {
+      if ( *meson == "eta")
+	argo_flux = 1559272026.0810509;
+    }
+    if ( *mass == 0.2 ) {
+      if ( *meson == "eta")
+	argo_flux = 836857701.5803154;
+    }
+    if ( *mass == 0.25 ) {
+      if ( *meson == "eta")
+	argo_flux = 129372153.23092696;
+    }
+    std::cout << "meanpath  " << meanpath << " ";
+    std::cout << "travelled  " << travelled << " ";
+    std::cout << "prob hit " << prob_hit(meanpath,travelled,1) << std::endl;
+    lim1hit->Fill( *mass*1000., 0.01, argo_flux*prob_hit(meanpath,travelled,1) );
+    lim2hit->Fill( *mass*1000., 0.01, argo_flux*prob_hit(meanpath,travelled,2) );
+    lim3hit->Fill( *mass*1000., 0.01, argo_flux*prob_hit(meanpath,travelled,3) );
+    lim4hit->Fill( *mass*1000., 0.01, argo_flux*prob_hit(meanpath,travelled,4) );
+    lim1hit->Write();
+    lim2hit->Write();
+    lim3hit->Write();
+    lim4hit->Write();
+
+  }
   // this are the axes of the limit plot as reference
   /*
   const Float_t xaxis[29] = {9.5,15,25,35,45,55,65,75,85,95,
@@ -276,40 +335,61 @@ void PlotLimits(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 
 
   // add points for this mass to the limits plot
-
-  for ( int i = 0; i < 29; i++ ) {
-    lim1hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs1hit[i]);
-    lim2hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs2hit[i]);
-    lim3hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs3hit[i]);
-    lim4hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs4hit[i]);
+  if ( detector != "argoneut_published" ) {
+    for ( int i = 0; i < 29; i++ ) {
+      if ( i == 7 ) {
+	std::cout << "charge bin " << i << " ";
+	std::cout << "charge " << charges[i] << " ";
+	std::cout << "potnorm " << POT_norm << " ";
+	std::cout << "events/sum_weigtdecay " << (events/sum_weight_decay) << " ";
+	std::cout << "decayfact " << decay_factor_physrevd << " ";
+	std::cout << "prob 1-hit " << probs1hit[i] << std::endl;
+	std::cout << "result fill " << POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs1hit[i] << std::endl;
+	//lim1hit->Fill(*mass*1000.,charges[i],1000000000000000);
+	//break;
+      }
+      lim1hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs1hit[i]);
+      lim2hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs2hit[i]);
+      lim3hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs3hit[i]);
+      lim4hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs4hit[i]);
+    }
+    lim1hit->Write();
+    lim2hit->Write();
+    lim3hit->Write();
+    lim4hit->Write();
   }
-  lim1hit->Write();
-  lim2hit->Write();
-  lim3hit->Write();
-  lim4hit->Write();
 
-  auto c1 = new TCanvas();
-  c1->SetLogy();
-  c1->SetLogx();
-  c1->SetLogz();
-  lim1hit->Draw("colz");
-  c1->SaveAs("img/Lim_1hit_uboone.png");
-  lim2hit->Draw("colz");
-  c1->SaveAs("img/Lim_2hit_uboone.png");
-  lim3hit->Draw("colz");
-  c1->SaveAs("img/Lim_3hit_uboone.png");
-  lim4hit->Draw("colz");
-  c1->SaveAs("img/Lim_4hit_uboone.png");
-  lim1hit->Draw("colz text");
-  c1->SaveAs("img/Lim_1hit_uboone_text.png");
-  lim2hit->Draw("colz text");
-  c1->SaveAs("img/Lim_2hit_uboone_text.png");
-  lim3hit->Draw("colz text");
-  c1->SaveAs("img/Lim_3hit_uboone_text.png");
-  lim4hit->Draw("colz text");
-  c1->SaveAs("img/Lim_4hit_uboone_text.png");
+  gStyle->SetOptStat(0);
+  gStyle->SetPaintTextFormat(".2e");
+  auto DrawLimits = [detector](TH2F* lim, int nhits)
+		    {
+		      auto c1 = new TCanvas();
+		      c1->SetLogy();
+		      c1->SetLogx();
+		      c1->SetLogz();
+		      lim->Draw("colz");
+		      lim->GetXaxis()->CenterTitle();
+		      lim->GetYaxis()->CenterTitle();
+		      lim->SetMarkerSize(0.7);
+		      TString outname
+			= Form("img/Limits/Lim_%ihit_%s.png",
+			       nhits,detector.Data());
+		      c1->SaveAs(outname);
+		      c1->SetCanvasSize(3000,1800);
+		      outname
+			  = Form("img/Limits/Lim_%ihit_%s_text.png",
+				 nhits,detector.Data());
+		      lim->Draw("colz text");
+		      c1->SaveAs(outname);
+		      delete c1;
+		    };
+
+  DrawLimits(lim1hit,1);
+  DrawLimits(lim2hit,2);
+  DrawLimits(lim3hit,3);
+  DrawLimits(lim4hit,4);
+
   
-  //cout << "geometrical acceptance " << value1/(events) << endl;
   cout << "geometrical acceptance " << value3/(sum_weight_decay) << endl;
   cout << "result " << result << endl;
   cout << "----------------------------------" << endl;

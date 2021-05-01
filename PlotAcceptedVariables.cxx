@@ -1,5 +1,6 @@
 #include "Root/UbooneAcceptanceChecker.cxx"
 #include "Root/DetectorInteraction.cxx"
+#include "Root/CreateEmptyDirs.cxx"
 
 void GenerateHistogramsDF(TString fstr,TString detector) {
   std::cout << "Generating histograms using RDataFrame for file " << fstr << std::endl;
@@ -9,6 +10,7 @@ void GenerateHistogramsDF(TString fstr,TString detector) {
 }
 
 void GenerateHistograms(TString fstr,TString detector) {
+  CreateEmptyDirs();
   std::cout << "Generating histograms for file " << fstr << std::endl;
   TH1 * AccE = new TH1F("AccE",
 			 "mCPs through detector;Energy (GeV);Entries (unweighted)",
@@ -89,6 +91,7 @@ void GenerateHistograms(TString fstr,TString detector) {
 
 void PlotAcceptedVariables(Bool_t Generate = false)
 {
+  CreateEmptyDirs();
   std::vector<TString> mass_points_pi0 =
     {
      "0.010",
@@ -144,7 +147,6 @@ void PlotAcceptedVariables(Bool_t Generate = false)
 	Double_t HistMaximum = 0;
 	for ( TString mass: mass_points_pi0 ) {
 	  f->Open(input_dir+"Acc_"+det+"_q_0.010_m_"+mass+"_fhc_"+meson+"s.root");
-	  //cout << input_dir+"Acc_"+det+"_q_0.010_m_"+mass+"_fhc"+meson+"s.root" << endl;
 	  h1 = (TH1F*)gDirectory->Get("Acc"+var);
 	  if ( plot_counter == 0 ) {
 	    h1->Draw("hist L");
@@ -168,9 +170,8 @@ void PlotAcceptedVariables(Bool_t Generate = false)
 	  htitle->SetTitle("mCPs from "+meson+" in "+det);
 	} else if ( var == "eE" || var == "eEw" ) {
 	  htitle->SetTitle("Electron recoil energy from "+meson+" in "+det);
-	  cout << "HEYU" << endl;
 	}
-	c1->SaveAs("img/Acc_variables/Acc_"+var+"_"+det+"_"+meson+"s.png");
+	c1->SaveAs("img/PassingThroughDetector/Acc_"+var+"_"+det+"_"+meson+"s.png");
       }
     }
   }

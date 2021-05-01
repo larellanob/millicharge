@@ -1,10 +1,12 @@
 #include "Root/UbooneAcceptanceChecker.cxx"
+#include "Root/CreateEmptyDirs.cxx"
 
 void FilterAccepted(TString fstr = "sim/mCP_q_0.010_m_0.010_fhc_pi0s.root",
 		    int WEIGHT = 5,
 		    TString detector = "uboone",
 		    Bool_t kTest = false)
 {
+  CreateEmptyDirs();
   TFile *f  = new TFile(fstr);
   TTree *mcp = f->Get<TTree>("mCP");
   ROOT::RDataFrame df("mCP",fstr.Data());

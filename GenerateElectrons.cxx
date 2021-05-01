@@ -1,4 +1,5 @@
 #include "Root/DetectorInteraction.cxx"
+#include "Root/CreateEmptyDirs.cxx"
 
 void GenerateElectrons
 (
@@ -6,6 +7,7 @@ void GenerateElectrons
  TString detector = "uboone"
 )
 {
+  CreateEmptyDirs();
   //TFile *f = new TFile
   //TFile*f = new TFile
   ROOT::RDataFrame df_mcp("mCP",mcp_file.Data());

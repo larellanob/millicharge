@@ -1,5 +1,6 @@
 #include "CrossSection.cxx"
 #include "DiffCrossSection.cxx"
+#include "Root/CreateEmptyDirs.cxx"
 
 const bool kTest = false;
 bool kWriteFile = true;
@@ -10,6 +11,7 @@ if ( kTest ) {
 
 void GenerateMcps(TString meson ="pi0",TString horn = "fhc", Double_t mCPmass = 0.01, Double_t mCPcharge = 0.01)
 {
+  CreateEmptyDirs();
   // decay parameters
   //Double_t mCPmass   = 0.01;   // GeV
   //Double_t mCPcharge = 0.01;   // electron charges
