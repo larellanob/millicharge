@@ -191,7 +191,7 @@ void PlotPublishedLimits()
   }
   gStyle->SetOptStat(0);
   lim1hit->SetTitle("1 hit");
-  lim1hit->Draw("colz");
+  lim1hit->Draw("colz text");
   
   uboone1hit->SetLineColor(kYellow);
   uboone1hit->SetLineWidth(5);

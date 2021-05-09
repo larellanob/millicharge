@@ -343,10 +343,16 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 	//lim1hit->Fill(*mass*1000.,charges[i],1000000000000000);
 	//break;
       }
-      lim1hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs1hit[i]);
-      lim2hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs2hit[i]);
-      lim3hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs3hit[i]);
-      lim4hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs4hit[i]);
+      /*
+      lim1hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs1hit[i]*charges[i]*charges[i]);
+      lim2hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs2hit[i]*charges[i]*charges[i]);
+      lim3hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs3hit[i]*charges[i]*charges[i]);
+      lim4hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs4hit[i]*charges[i]*charges[i]);
+      */
+      lim1hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs1hit[i]*charges[i]*charges[i]);
+      lim2hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs2hit[i]*charges[i]*charges[i]);
+      lim3hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs3hit[i]*charges[i]*charges[i]);
+      lim4hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs4hit[i]*charges[i]*charges[i]);
     }
     lim1hit->Write();
     lim2hit->Write();

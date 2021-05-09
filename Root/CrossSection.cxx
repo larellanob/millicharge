@@ -64,7 +64,7 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
   //f2->Draw();
   Double_t i = f->Integral(4*x,1.0);
   Double_t i2 = f2->Integral(4*x,1.0);
-  Double_t epsilon = 0.01;
+  Double_t epsilon = 1.;
   Double_t alpha = 1./137.;
   //Double_t alpha = 1.;
 
@@ -93,7 +93,7 @@ Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TStrin
   if ( mass_mes == pdgCrossSection.GetParticle(111)->Mass() ) {
     // pi0 -> gamma gamma
     BRMesonPhotonPhoton = 0.98823;
-    BRMesonDalitz = 0.0174; // pdg
+    BRMesonDalitz = 0.01174; // pdg
     //FormFactor = pow(1.0+ 0.11*((mass_mcp*mass_mcp)/(mass_mes*mass_mes)),2);
     //return 0.023*epsilon*epsilon;
   } else if ( mass_mes == pdgCrossSection.GetParticle(221)->Mass() ) {
