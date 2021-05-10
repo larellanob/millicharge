@@ -270,7 +270,7 @@ void PlotAcceptedVariables(Bool_t Generate = false)
       std::cout << mass.Atof() << " " << h1->GetBinContent(1) << std::endl;
       sim_eta_flux->AddPoint(mass.Atof(),h1->GetBinContent(1));
     }
-    sim_eta_flux->Draw("A P same");
+    sim_eta_flux->Draw("P same");
     c1->SaveAs("img/PassingThroughDetector/Acc_Flux_"+det+"_s.png");
   }
 }
