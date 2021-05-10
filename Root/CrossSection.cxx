@@ -45,10 +45,15 @@ Double_t I3ZhenLiuFormFactors(Double_t *t, Double_t *par ) {
 }
 
 
-Double_t CrossSection(Double_t mass_mcp= 0.0001, Double_t mass_mes = 9.0, TString mode = "zhenliu" )
+Double_t CrossSection(Double_t mass_mcp= 0.0001, TString meson = "", TString mode = "zhenliu" )
 {
   // this might generate a warning of 'object already instantiated
+  if ( meson == "" ) {
+    std::cout << "ERROR: no meson for CrossSection.cxx" << std::endl;
+    return 0;
+  }
   TDatabasePDG pdgCrossSection;
+  Double_t mass_mes = pdgCrossSection.GetParticle(meson.Data())->Mass();
   //mass_mes = pdgCrossSection.GetParticle(221)->Mass();
   //mass_mcp= pdgCrossSection.GetParticle(11)->Mass();
   Double_t x = (mass_mcp*mass_mcp)/(mass_mes*mass_mes);

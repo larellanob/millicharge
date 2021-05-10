@@ -1,4 +1,5 @@
 #include "Root/UbooneAcceptanceChecker.cxx"
+#include "Root/CrossSection.cxx"
 #include "Root/DetectorInteraction.cxx"
 #include "Root/CreateEmptyDirs.cxx"
 
@@ -13,8 +14,8 @@ void GenerateHistograms(TString fstr,TString detector) {
   CreateEmptyDirs();
   std::cout << "Generating histograms for file " << fstr << std::endl;
   TH1 * AccE = new TH1F("AccE",
-			 "mCPs through detector;Energy (GeV);Entries (unweighted)",
-			 30,0,12);
+			"mCPs through detector;Energy (GeV);Entries (unweighted)",
+			30,0,12);
   TH1 * AccL = new TH1F("AccL",
 			"Detector distance crossed;Distance (cm);Entries (unweighted)",
 			30,0,600);
@@ -26,12 +27,24 @@ void GenerateHistograms(TString fstr,TString detector) {
 			 30,0,600);
 
   TH1 * AcceEw = new TH1F("AcceEw",
-			   "Electron recoil energies (one electron per mCP);Energy (MeV);Entries (weighted)",
-			   30,0,300);
+			  "Electron recoil energies (one electron per mCP);Energy (MeV);Entries (weighted)",
+			  30,0,300);
   TH1 * AcceE = new TH1F("AcceE",
-  			  "Electron recoil energies (one electron per mCP);Energy (MeV);Entries (unweighted)",
-  			  30,0,300);
+			 "Electron recoil energies (one electron per mCP);Energy (MeV);Entries (unweighted)",
+			 30,0,300);
 
+  /*
+    const int pi0_points = 5;
+  const int pi0_points = 8;
+  
+  TGraph * sim_pi0_flux = new TGraph();
+  TGraph * sim_eta_flux = new TGraph();
+  */
+
+  TH1 * AccFlux = new TH1F("AccFlux",
+			   "mCPs passing though "+detector+";arbitrary;# mCP passing through",
+			   1,0,1);
+  
   // read accepted mcp file
   TFile *f  = new TFile(fstr);
 
@@ -67,8 +80,31 @@ void GenerateHistograms(TString fstr,TString detector) {
     // returns in MeV!!
     Double_t recoil_electron_energy = DetectorInteraction(Mom->E(),Mom->M(),*charge);
     AcceEw->Fill(recoil_electron_energy,(*weight_meson)*(*weight_decay));
+    AccFlux->Fill(0.5,(*weight_meson)*(*weight_decay));
   }
 
+  // Flux normalization
+  double POT;
+  if ( detector == "argoneut" ) {
+    POT = 1e20/500000.;
+  } else if ( detector == "dune" ) {
+    POT = 1e21/500000.;
+  } else if ( detector == "duneOrnella" ) {
+    POT = 3*1e22/500000.;
+  } else if ( detector == "uboone" ) {
+    POT = 1e21/500000.;
+  }
+  std::cout << "mCP Weights " << AccFlux->GetBinContent(1) << std::endl;
+  double phase_space_supression = CrossSection(*mass,*meson,"physrevd");
+  double epsilon = 0.01;
+  AccFlux->Scale(POT*phase_space_supression*epsilon*epsilon);
+  std::cout << "mass, meson " << *mass << " " << *meson << std::endl;
+  std::cout << "PS supression " << phase_space_supression << std::endl;
+  std::cout << "POT " << POT << std::endl;
+  std::cout << "epsilon^2 " << epsilon*epsilon << std::endl;
+  // then you get the value with
+  // AccFlux->GetBinContent(1);
+  
   // Accepted histograms
   TString AccHistoFilename =
     Form("hist/Acc_%s_q_%0.3f_m_%0.3f_%s_%ss.root",
@@ -80,16 +116,18 @@ void GenerateHistograms(TString fstr,TString detector) {
   AccL->Write();
   AcceEw->Write();
   AcceE->Write();
+  AccFlux->Write();
   delete AccEw;
   delete AccLw;
   delete AccE;
   delete AccL;
   delete AcceEw;
   delete AcceE;
+  delete AccFlux;
   AccFileOut->Close();
 }
 
-void PlotAcceptedVariables(Bool_t Generate = false)
+void PlotAcceptedVariables(Bool_t Generate = true)
 {
   CreateEmptyDirs();
   std::vector<TString> mass_points_pi0 =
@@ -116,8 +154,8 @@ void PlotAcceptedVariables(Bool_t Generate = false)
   std::vector<TString> detectors =
     {
      //"dune",
-     "uboone",
-     //"argoneut"
+     //"uboone",
+     "argoneut"
     };
 
   TString input_dir = "hist/";

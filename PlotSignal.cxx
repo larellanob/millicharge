@@ -184,17 +184,10 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   
 
   // cross section correction
-  TDatabasePDG pdg;
-  double mesonmass = 0;
-  if ( *meson == "pi0" ) {
-    mesonmass = pdg.GetParticle(111)->Mass();
-  } else if ( *meson == "eta" ) {
-    mesonmass = pdg.GetParticle(221)->Mass();
-  }
-  Double_t decay_factor_zhenliu = CrossSection(*mass,mesonmass,"zhenliu");
-  Double_t decay_factor_physrevd = CrossSection(*mass,mesonmass,"physrevd");
-  Double_t decay_factor_naive = CrossSection(*mass,mesonmass,"naive");
-  Double_t decay_factor_t2k = CrossSection(*mass,mesonmass,"t2k");
+  Double_t decay_factor_zhenliu = CrossSection(*mass,*meson,"zhenliu");
+  Double_t decay_factor_physrevd = CrossSection(*mass,*meson,"physrevd");
+  Double_t decay_factor_naive = CrossSection(*mass,*meson,"naive");
+  Double_t decay_factor_t2k = CrossSection(*mass,*meson,"t2k");
   Double_t truexsec = *xsec; // no need to recalculate
 
   std::cout << "Simulated particles entering detector geometry: " << value1 << std::endl;
@@ -235,7 +228,7 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 
   // DO LIMITS
   // UNCOMMENT
-  TFile *LimitsFileUpdate = new TFile("hist/Lim_"+detector+".root","update");
+  TFile *LimitsFileUpdate = new TFile("hist/Sig_"+detector+".root","update");
   TH2F * lim1hit;
   lim1hit = (TH2F*)gDirectory->Get("lim1hit");
   TH2F * lim2hit;
@@ -373,12 +366,12 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 		      lim->GetYaxis()->CenterTitle();
 		      lim->SetMarkerSize(0.7);
 		      TString outname
-			= Form("img/Limits/Lim_%ihit_%s.png",
+			= Form("img/Limits/Sig_%ihit_%s.png",
 			       nhits,detector.Data());
 		      c1->SaveAs(outname);
 		      c1->SetCanvasSize(3000,1800);
 		      outname
-			  = Form("img/Limits/Lim_%ihit_%s_text.png",
+			  = Form("img/Limits/Sig_%ihit_%s_text.png",
 				 nhits,detector.Data());
 		      lim->Draw("colz text");
 		      c1->SaveAs(outname);

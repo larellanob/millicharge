@@ -8,22 +8,22 @@ void PlotSupressionFactor()
   CreateEmptyDirs();
   std::vector<double> masspoints_pi0 =
     {
-     0.001,
-     0.002,
-     0.003,
-     0.005,
-     0.006
+     0.010,
+     0.020,
+     0.030,
+     0.050,
+     0.060
     };
   std::vector<double> masspoints_eta =
     {
-     0.001,
-     0.002,
-     0.003,
-     0.005,
-     0.006,
      0.010,
      0.020,
-     0.025
+     0.030,
+     0.050,
+     0.060,
+     0.100,
+     0.200,
+     0.250
     };
 
   double charge = 0.01; // epsilon factor
@@ -39,10 +39,6 @@ void PlotSupressionFactor()
   TGraph *naive_eta = new TGraph(masspoints_eta.size());
 
 
-  TDatabasePDG pdgPlotCrossSection;
-  double mass_pi0 = pdgPlotCrossSection.GetParticle(111)->Mass();
-  double mass_eta = pdgPlotCrossSection.GetParticle(221)->Mass();
-
 
   double global_minimum_pi0 = 100;
   double global_maximum_pi0 = -100;
@@ -51,7 +47,7 @@ void PlotSupressionFactor()
   double xsec;
   
   for ( int i = 0; i < masspoints_pi0.size(); i++ ) {
-    xsec = CrossSection(masspoints_pi0[i],mass_pi0,"zhenliu");
+    xsec = CrossSection(masspoints_pi0[i],"pi0","zhenliu");
     zhenliu_pi0->SetPoint(i,masspoints_pi0[i],xsec);
     if ( global_minimum_pi0 > xsec ) {
       global_minimum_pi0 = xsec;
@@ -60,7 +56,7 @@ void PlotSupressionFactor()
       global_maximum_pi0 = xsec;
     }
     
-    xsec = CrossSection(masspoints_pi0[i],mass_pi0,"physrevd");
+    xsec = CrossSection(masspoints_pi0[i],"pi0","physrevd");
     physrevd_pi0->SetPoint(i,masspoints_pi0[i],xsec);
     if ( global_minimum_pi0 > xsec ) {
       global_minimum_pi0 = xsec;
@@ -70,7 +66,7 @@ void PlotSupressionFactor()
     }
 
     
-    xsec = CrossSection(masspoints_pi0[i],mass_pi0,"naive");
+    xsec = CrossSection(masspoints_pi0[i],"pi0","naive");
     naive_pi0->SetPoint(i,masspoints_pi0[i],xsec);
     if ( global_minimum_pi0 > xsec ) {
       global_minimum_pi0 = xsec;
@@ -80,7 +76,7 @@ void PlotSupressionFactor()
     }
 
     
-    xsec = CrossSection(masspoints_pi0[i],mass_pi0,"t2k");
+    xsec = CrossSection(masspoints_pi0[i],"pi0","t2k");
     t2k_pi0->SetPoint(i,masspoints_pi0[i],xsec);
     if ( global_minimum_pi0 > xsec ) {
       global_minimum_pi0 = xsec;
@@ -92,7 +88,7 @@ void PlotSupressionFactor()
   }
 
   for ( int i = 0; i < masspoints_eta.size(); i++ ) {
-    xsec = CrossSection(masspoints_eta[i],mass_eta,"zhenliu");
+    xsec = CrossSection(masspoints_eta[i],"eta","zhenliu");
     zhenliu_eta->SetPoint(i,masspoints_eta[i],xsec);
     if ( global_minimum_eta > xsec ) {
       global_minimum_eta = xsec;
@@ -101,7 +97,7 @@ void PlotSupressionFactor()
       global_maximum_eta = xsec;
     }
     
-    xsec = CrossSection(masspoints_eta[i],mass_eta,"physrevd");
+    xsec = CrossSection(masspoints_eta[i],"eta","physrevd");
     physrevd_eta->SetPoint(i,masspoints_eta[i],xsec);
     if ( global_minimum_eta > xsec ) {
       global_minimum_eta = xsec;
@@ -111,7 +107,7 @@ void PlotSupressionFactor()
     }
 
     
-    xsec = CrossSection(masspoints_eta[i],mass_eta,"naive");
+    xsec = CrossSection(masspoints_eta[i],"eta","naive");
     naive_eta->SetPoint(i,masspoints_eta[i],xsec);
     if ( global_minimum_eta > xsec ) {
       global_minimum_eta = xsec;
@@ -121,7 +117,7 @@ void PlotSupressionFactor()
     }
 
     
-    xsec = CrossSection(masspoints_eta[i],mass_eta,"t2k");
+    xsec = CrossSection(masspoints_eta[i],"eta","t2k");
     t2k_eta->SetPoint(i,masspoints_eta[i],xsec);
     if ( global_minimum_eta > xsec ) {
       global_minimum_eta = xsec;
@@ -131,7 +127,7 @@ void PlotSupressionFactor()
     }
 
   }
-
+  TGaxis::SetMaxDigits(4);
   auto c1 = new TCanvas();
   //c1->SetLogy();
   //c1->SetLogx();
@@ -148,8 +144,9 @@ void PlotSupressionFactor()
 
   std::cout << global_minimum_pi0 << std::endl;
   std::cout << global_maximum_pi0 << std::endl;
-  zhenliu_pi0->SetMinimum(global_minimum_pi0 - 0.1*global_minimum_pi0);
-  zhenliu_pi0->SetMaximum(global_maximum_pi0 + 0.1*global_maximum_pi0);
+  Double_t range_pi0 = global_maximum_pi0 - global_minimum_pi0;
+  zhenliu_pi0->SetMinimum(global_minimum_pi0 - 0.1*range_pi0);
+  zhenliu_pi0->SetMaximum(global_maximum_pi0 + 0.1*range_pi0);
   zhenliu_pi0->Draw("A L*");
   physrevd_pi0->Draw("same L*");
   naive_pi0->Draw("same L*");
@@ -188,8 +185,9 @@ void PlotSupressionFactor()
 
   std::cout << global_minimum_eta << std::endl;
   std::cout << global_maximum_eta << std::endl;
-  zhenliu_eta->SetMinimum(global_minimum_eta - 0.1*global_minimum_eta);
-  zhenliu_eta->SetMaximum(global_maximum_eta + 0.1*global_maximum_eta);
+  Double_t range_eta = global_maximum_eta - global_minimum_eta;
+  zhenliu_eta->SetMinimum(global_minimum_eta - 0.1*range_eta);
+  zhenliu_eta->SetMaximum(global_maximum_eta + 0.1*range_eta);
   zhenliu_eta->Draw("A L*");
   physrevd_eta->Draw("same L*");
   naive_eta->Draw("same L*");

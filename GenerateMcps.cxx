@@ -46,7 +46,7 @@ void GenerateMcps(TString meson ="eta",TString horn = "rhc", Double_t mCPmass = 
   //////////
   // decay
   // cross section dedicated macro
-  Double_t cross_section = CrossSection(mCPmass,kMesonMass);
+  Double_t cross_section = CrossSection(mCPmass,meson);
   if ( 2*mCPmass > kMesonMass ) {
     std::cout << "ERROR: Kinematically forbidden decay. Aborting." << std::endl;
     return;

@@ -118,6 +118,7 @@ void PlotPublishedLimits()
   Double_t threshold2hit = nbkghits(percentage_empty,2,frames);
 
   std::cout << "threshold " << threshold << std::endl;
+  std::cout << "threshold 2 hit " << threshold2hit << std::endl;
   TGraph *uboone1hit = new TGraph(8);
   TGraph *uboone2hit = new TGraph(8);
 
@@ -139,8 +140,8 @@ void PlotPublishedLimits()
   Double_t resolution_factor = (0.3/470)*(5.6/400); // put microboone resolution
   
   std::cout << "Resolution factor " << resolution_factor << std::endl;
-  std::cout << "bkg 2 hits " << threshold2hit << std::endl;
-  std::cout << "reduced 2 hit bkg " << resolution_factor*threshold2hit << std::endl;
+  std::cout << "2-hit bkg (eq. 17) " << threshold2hit << std::endl;
+  std::cout << "2-hit bkg considering alignment (eq. 18) " << resolution_factor*threshold2hit << std::endl;
   int counter = -1;
   std::cout << "ok " << std::endl;
   for ( int x: massbins ) {
@@ -162,7 +163,8 @@ void PlotPublishedLimits()
 	findlim1hit = false; // stop searching
       }
       // 2 hits
-      if ( lim2hit->GetBinContent(lim2hit->GetBin(x,y+1))*resolution_factor > 3.5 && findlim2hit) {
+      //if ( lim2hit->GetBinContent(lim2hit->GetBin(x,y+1))*resolution_factor > 3.5 && findlim2hit) {
+      if ( lim2hit->GetBinContent(lim2hit->GetBin(x,y+1)) > 3.5 && findlim2hit) {
 	double meany
 	  = 0.5*(lim2hit->GetYaxis()->GetBinCenter(y+1)
 		 + lim2hit->GetYaxis()->GetBinCenter(y));
@@ -212,6 +214,16 @@ void PlotPublishedLimits()
   uboone1hit->SetTitle("ArgoNeuT 1 hit our simulation");
   tgraphs[1]->SetTitle("ArgoNeuT 1 hit published");
   myleg = c1->BuildLegend(0.6,0.15,0.9,0.35,"","");
+
+  TString detector = "argoneut";
+  TString outname = Form("img/Limits/Limits_1hit_%s_text.png",detector.Data());
+  c1->SaveAs(outname);
+  lim1hit->Draw("colz");
+  tgraphs[1]->Draw("same L");
+  uboone1hit->Draw("same L");
+  outname = Form("img/Limits/Limits_1hit_%s.png",detector.Data());
+  c1->SaveAs(outname);
+    
   auto c2 = new TCanvas();
   c2->SetLogy();
   c2->SetLogx();
