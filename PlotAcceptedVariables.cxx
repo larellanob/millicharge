@@ -127,7 +127,7 @@ void GenerateHistograms(TString fstr,TString detector) {
   AccFileOut->Close();
 }
 
-void PlotAcceptedVariables(Bool_t Generate = true)
+void PlotAcceptedVariables(Bool_t Generate = false)
 {
   CreateEmptyDirs();
   std::vector<TString> mass_points_pi0 =
@@ -137,6 +137,18 @@ void PlotAcceptedVariables(Bool_t Generate = true)
      "0.030",
      "0.050",
      "0.060"
+    };
+
+  std::vector<TString> mass_points_eta =
+    {
+     "0.010",
+     "0.020",
+     "0.030",
+     "0.050",
+     "0.060",
+     "0.100",
+     "0.200",
+     "0.250"
     };
 
   std::vector<TString> mesons =
@@ -166,11 +178,13 @@ void PlotAcceptedVariables(Bool_t Generate = true)
   
   if ( Generate == true ) {
     for ( TString det: detectors ) {
-      for ( TString meson: mesons ) {
-	for ( TString mass: mass_points_pi0 ) {
-	  TString generate_file = "sim/mCP_"+det+"_q_0.010_m_"+mass+"_fhc_"+meson+"s.root";
-	  GenerateHistograms(generate_file,det);
-	}
+      for ( TString mass: mass_points_pi0 ) {
+	TString generate_file = "sim/mCP_"+det+"_q_0.010_m_"+mass+"_fhc_pi0s.root";
+	GenerateHistograms(generate_file,det);
+      }
+      for ( TString mass: mass_points_eta ) {
+	TString generate_file = "sim/mCP_"+det+"_q_0.010_m_"+mass+"_fhc_etas.root";
+	GenerateHistograms(generate_file,det);
       }
     }
   }
@@ -213,5 +227,50 @@ void PlotAcceptedVariables(Bool_t Generate = true)
       }
     }
   }
+
+  // Flux compared to publications
+  TGraph * sim_pi0_flux = new TGraph();
+  TGraph * sim_eta_flux = new TGraph();
+
+  /*
+  pub_pi0_flux->SetLineColor(kBlue);
+  pub_eta_flux->SetLineColor(kOrange);
+  pub_pi0_flux->SetLineWidth(5);
+  pub_eta_flux->SetLineWidth(5);
+  pub_eta_flux->Draw();
+  pub_eta_flux->SetMinimum(1e-2);
+  pub_eta_flux->SetMaximum(1e12);
+  */
+  sim_pi0_flux->SetMarkerStyle(kFullTriangleUp);
+  sim_eta_flux->SetMarkerStyle(kFullSquare);
+  sim_pi0_flux->SetMarkerSize(1.5);
+  sim_eta_flux->SetMarkerSize(1);
+  sim_pi0_flux->SetMarkerColor(kBlue+2);
+  sim_eta_flux->SetMarkerColor(kOrange-2);
+  
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
+
+  for ( TString det: detectors ) {
+    TLegend *leg;
+    auto *c1 = new TCanvas();
+    c1->SetLogx();
+    c1->SetLogy();
+    for ( TString mass: mass_points_pi0 ) {
+      f->Open(input_dir+"Acc_"+det+"_q_0.010_m_"+mass+"_fhc_pi0s.root");
+      h1 = (TH1F*)gDirectory->Get("AccFlux");
+      std::cout << mass.Atof() << " " << h1->GetBinContent(1) << std::endl;
+      sim_pi0_flux->AddPoint(mass.Atof(),h1->GetBinContent(1));
+    }
+    sim_pi0_flux->Draw("A P");
     
+    for ( TString mass: mass_points_eta ) {
+      f->Open(input_dir+"Acc_"+det+"_q_0.010_m_"+mass+"_fhc_etas.root");
+      h1 = (TH1F*)gDirectory->Get("AccFlux");
+      std::cout << mass.Atof() << " " << h1->GetBinContent(1) << std::endl;
+      sim_eta_flux->AddPoint(mass.Atof(),h1->GetBinContent(1));
+    }
+    sim_eta_flux->Draw("A P same");
+    c1->SaveAs("img/PassingThroughDetector/Acc_Flux_"+det+"_s.png");
+  }
 }
