@@ -3,6 +3,16 @@
 #include "Root/DetectorInteraction.cxx"
 #include "Root/CreateEmptyDirs.cxx"
 
+
+void LatexText(Double_t x, Double_t y, int font, TString text)
+{
+  TLatex l2;
+  l2.SetNDC();
+  l2.SetTextFont(font);
+  l2.DrawLatex(x,y,text);
+}
+
+
 void GenerateHistogramsDF(TString fstr,TString detector) {
   std::cout << "Generating histograms using RDataFrame for file " << fstr << std::endl;
 
@@ -228,19 +238,47 @@ void PlotAcceptedVariables(Bool_t Generate = false)
     }
   }
 
+  /////////////////////////////////
+  /////////////////////////////////
   // Flux compared to publications
+  // i.e. number of particles passing through the detector
+  /////////////////////////////////
+  /////////////////////////////////
+
+  // creating and filling the tgraphcs
   TGraph * sim_pi0_flux = new TGraph();
   TGraph * sim_eta_flux = new TGraph();
 
-  /*
+  TGraph * pub_pi0_flux = new TGraph();
+  TGraph * pub_eta_flux = new TGraph();
+  for ( auto det: detectors ) {
+    TString pub_data_filename_pi0 = "data/passing_through/"+det+"/pi0.csv";
+    TString pub_data_filename_eta = "data/passing_through/"+det+"/eta.csv";
+    std::ifstream pub_data_file_pi0(pub_data_filename_pi0.Data());
+    std::ifstream pub_data_file_eta(pub_data_filename_eta.Data());
+    TString reader;
+    // takes two column csv files
+    while ( reader.ReadToDelim(pub_data_file_pi0,',') ) {
+      Double_t x = reader.Atof();
+      reader.ReadToDelim(pub_data_file_pi0,'\n');
+      Double_t y = reader.Atof();
+      pub_pi0_flux->AddPoint(x,y);
+    }
+    while ( reader.ReadToDelim(pub_data_file_eta,',') ) {
+      Double_t x = reader.Atof();
+      reader.ReadToDelim(pub_data_file_eta,'\n');
+      Double_t y = reader.Atof();
+      pub_eta_flux->AddPoint(x,y);
+    }
+  }
+
+
+  // drawiing properties
   pub_pi0_flux->SetLineColor(kBlue);
   pub_eta_flux->SetLineColor(kOrange);
   pub_pi0_flux->SetLineWidth(5);
   pub_eta_flux->SetLineWidth(5);
-  pub_eta_flux->Draw();
-  pub_eta_flux->SetMinimum(1e-2);
-  pub_eta_flux->SetMaximum(1e12);
-  */
+
   sim_pi0_flux->SetMarkerStyle(kFullTriangleUp);
   sim_eta_flux->SetMarkerStyle(kFullSquare);
   sim_pi0_flux->SetMarkerSize(1.5);
@@ -248,29 +286,271 @@ void PlotAcceptedVariables(Bool_t Generate = false)
   sim_pi0_flux->SetMarkerColor(kBlue+2);
   sim_eta_flux->SetMarkerColor(kOrange-2);
   
-  gStyle->SetPadTickX(1);
-  gStyle->SetPadTickY(1);
+  //gStyle->SetPadTickX(1);
+  //gStyle->SetPadTickY(1);
 
   for ( TString det: detectors ) {
-    TLegend *leg;
-    auto *c1 = new TCanvas();
-    c1->SetLogx();
-    c1->SetLogy();
+    TString det_formal;
+    if ( det == "uboone" || det == "naiveuboone" ) {
+      det_formal = "MicroBooNE";
+    } else if ( det == "dune" || det == "duneOrnella" ) {
+      det_formal = "DUNE";
+    } else if ( det == "argoneut" ) {
+      det_formal = "ArgoNeuT";
+    } else if ( det == "t2k" ) {
+      det_formal = "T2K";
+    } else {
+      det_formal = det;
+    }
+    
     for ( TString mass: mass_points_pi0 ) {
       f->Open(input_dir+"Acc_"+det+"_q_0.010_m_"+mass+"_fhc_pi0s.root");
       h1 = (TH1F*)gDirectory->Get("AccFlux");
-      std::cout << mass.Atof() << " " << h1->GetBinContent(1) << std::endl;
       sim_pi0_flux->AddPoint(mass.Atof(),h1->GetBinContent(1));
     }
-    sim_pi0_flux->Draw("A P");
     
     for ( TString mass: mass_points_eta ) {
       f->Open(input_dir+"Acc_"+det+"_q_0.010_m_"+mass+"_fhc_etas.root");
       h1 = (TH1F*)gDirectory->Get("AccFlux");
-      std::cout << mass.Atof() << " " << h1->GetBinContent(1) << std::endl;
       sim_eta_flux->AddPoint(mass.Atof(),h1->GetBinContent(1));
     }
-    sim_eta_flux->Draw("P same");
-    c1->SaveAs("img/PassingThroughDetector/Acc_Flux_"+det+"_s.png");
+
+
+    Double_t global_maximum;
+    double max1 = TMath::MaxElement(sim_pi0_flux->GetN(),sim_pi0_flux->GetY());
+    double max2 = TMath::MaxElement(sim_eta_flux->GetN(),sim_eta_flux->GetY());
+    double max3 = TMath::MaxElement(pub_pi0_flux->GetN(),pub_pi0_flux->GetY());
+    double max4 = TMath::MaxElement(pub_eta_flux->GetN(),pub_eta_flux->GetY());
+    global_maximum = max(max1,max2);
+    global_maximum = max(global_maximum,max3);
+    global_maximum = max(global_maximum,max4);
+    std::cout << global_maximum << std::endl;
+    global_maximum *= 100;
+    sim_eta_flux->SetMaximum(global_maximum);
+
+    Double_t global_minimum;
+    double min1 = TMath::MinElement(sim_pi0_flux->GetN(),sim_pi0_flux->GetY());
+    double min2 = TMath::MinElement(sim_eta_flux->GetN(),sim_eta_flux->GetY());
+    double min3 = TMath::MinElement(pub_pi0_flux->GetN(),pub_pi0_flux->GetY());
+    double min4 = TMath::MinElement(pub_eta_flux->GetN(),pub_eta_flux->GetY());
+    global_minimum = min(min1,min2);
+    global_minimum = min(global_minimum,min3);
+    global_minimum = min(global_minimum,min4);
+    std::cout << global_minimum << std::endl;
+    global_minimum /= 10;
+    sim_eta_flux->SetMinimum(global_minimum);
+    
+
+    /*
+    sim_eta_flux->Draw("A P");
+    sim_pi0_flux->Draw("P same");
+
+    pub_pi0_flux->Draw("same");
+    pub_eta_flux->Draw("same");
+    */
+
+
+    //////////////
+    // RATIO between simulation / published
+    
+    auto *c2 =  new TCanvas();  
+    double ratiopi0[5];
+    double ratioeta[8];
+    
+    
+    cout << "Plotting and outputing ratio of simulation/published " << endl;
+    
+    TGraph *ratio_pi0 = new TGraph();
+    TGraph *ratio_eta = new TGraph();
+    for ( int i = 0; i < sim_pi0_flux->GetN(); i++ ) {
+      ratio_pi0->AddPoint(sim_pi0_flux->GetPointX(i),sim_pi0_flux->GetPointY(i)/pub_pi0_flux->GetPointY(i));
+    }
+    for ( int i = 0; i < sim_eta_flux->GetN(); i++ ) {
+      ratio_eta->AddPoint(sim_eta_flux->GetPointX(i),sim_eta_flux->GetPointY(i)/pub_eta_flux->GetPointY(i));
+    }
+    
+    c2->SetLogy();
+    c2->SetLogx();
+
+    ratio_pi0->SetMarkerStyle(kFullTriangleUp);
+    ratio_eta->SetMarkerStyle(kFullSquare);
+    ratio_pi0->SetMarkerSize(1.5);
+    ratio_eta->SetMarkerSize(1.2);
+    ratio_pi0->SetMarkerColor(kBlue+2);
+    ratio_eta->SetMarkerColor(kOrange-2);
+
+    
+    double ratiomin = min(TMath::MinElement(ratio_eta->GetN(),ratio_eta->GetY()), TMath::MinElement(ratio_pi0->GetN(),ratio_pi0->GetY()));
+    double ratiomax = max(TMath::MaxElement(ratio_eta->GetN(),ratio_eta->GetY()), TMath::MaxElement(ratio_pi0->GetN(),ratio_pi0->GetY()));
+    
+    if ( det == "argoneut" ) {
+      ratio_eta->SetMaximum(40);
+      ratio_eta->SetMinimum(0.0001);
+    } else if ( det == "dune" ) {
+      ratio_eta->SetMaximum(40);
+      ratio_eta->SetMinimum(0.1);
+    }
+    ratio_eta->SetTitle("mCP flux comparison "+det);
+  
+    ratio_eta->Draw("A P");
+    ratio_pi0->Draw("same P");
+    
+    ratio_eta->GetYaxis()->SetTitle("(mCP our simul)/("+det+" published)");
+    ratio_eta->GetXaxis()->SetTitle("m_{#chi} (GeV)");
+    c2->SaveAs("img/DifferenceAccepted_"+det+".png");
+
+
+
+    // ratio plot using TRatioPlot (duh)
+    auto *c3 = new TCanvas();
+    //sim_pi0_flux->GetY()[i]/ypi0[i];
+    //auto rp = new TRatioPlot(sim_pi0_flux->GetHistogram(),pub_pi0_flux->GetHistogram());
+    //rp->Draw();
+    
+    // top pad (plot)
+    // xlow, ylow, xhigh, yhigh
+    
+
+    
+    
+    TPad *pad1 = new TPad("pad1","pad1",0,0.3,1.0,1.0);
+    pad1->SetBottomMargin(0.05); // upper and lower plot are joined
+    pad1->SetGridx();
+    pad1->Draw();
+    pad1->cd();
+    pad1->SetLogy();
+    pad1->SetLogx();
+    sim_eta_flux->Draw("A P");
+    pub_eta_flux->Draw("same");
+    
+    // y axis
+    if ( det != "t2k" ) {
+      sim_eta_flux->GetYaxis()->SetTitle("# mCP accepted by "+det_formal);
+    } else if ( det == "t2k" ) {
+      sim_eta_flux->GetYaxis()->SetTitle("mCP Br for #epsilon^{2} = 1");
+    }
+    
+    // top pad range
+    if ( det == "duneOrnella" ) {
+      sim_eta_flux->SetMinimum(1e8);
+      sim_eta_flux->SetMaximum(1e17);
+    } else if ( det == "t2k" ) {
+      sim_eta_flux->SetMinimum(1e-7);
+      sim_eta_flux->SetMaximum(1e-2);
+    }
+      
+    // drawing
+    //sim_eta_flux->Draw("same P");
+    pub_pi0_flux->Draw("same");
+    sim_pi0_flux->Draw("same P");
+  
+
+    // legend has to be after drawing
+    TLegend *ratioleg;
+    sim_eta_flux->SetTitle("#eta Manc. simulation");
+    sim_pi0_flux->SetTitle("#pi^{0} Manc. simulation");
+    if ( det == "dune" ) {
+      pub_pi0_flux->SetTitle("#pi^{0} Phys. Rev. D 100, 015043");
+      pub_eta_flux->SetTitle("#eta Phys. Rev. D 100, 015043");
+    } else if ( det == "argoneut" ||
+		det == "duneOrnella" ||
+		det == "uboone" ) {
+      pub_pi0_flux->SetTitle("#pi^{0} arXiv:1902.03246");
+      pub_eta_flux->SetTitle("#eta arXiv:1902.03246");
+    } else if ( det == "t2k" ) {
+      pub_pi0_flux->SetTitle("#pi^{0} arXiv 2103.11814");
+      pub_eta_flux->SetTitle("#eta arXiv 2103.11814");
+    } 
+    ratioleg = pad1->BuildLegend(0.6,0.7,0.9,0.9,"","");  
+    
+    // title after legend is built
+    if ( det == "dune" ) {
+      sim_eta_flux->SetTitle("Validation with FerMINI group: "+det_formal+" detector");
+    } else if ( det == "argoneut" || det == "duneOrnella" ) {
+      sim_eta_flux->SetTitle("Validation with ArgoNeuT group: "+det_formal+" detector");
+    } else if ( det == "t2k" ) {
+      sim_eta_flux->SetTitle("Validation with T2K group: Branching ratio only");
+    } else if ( det == "uboone" ) {
+      sim_eta_flux->SetTitle("Comparison of MicroBooNE simulation (10^{21} POT fhc) with ArgoNeuT group");
+    }
+  
+    // first ratio (pi0)
+    c3->cd();   // Go back to the main canvas before defining pad2!!!!
+    TPad *pad2 = new TPad("pad2","pad3",0,0.05,1.0,0.32);
+    pad2->SetTopMargin(0.0);
+    pad2->SetBottomMargin(0.3);
+    pad2->SetGridx();
+    if ( det == "dune" ) {
+      pad2->SetGridy();
+    }
+    pad2->Draw();
+    pad2->cd();
+    
+    // per det adjustment
+    pad2->SetLogx();
+    
+    if ( det == "argoneut" ||
+	 det == "uboone" ||
+	 det == "naiveuboone" ||
+	 det == "duneOrnella"
+	 ) {
+      pad2->SetLogy();
+    } if ( det == "dune" ) {
+      ratio_eta->SetMaximum(5.5);
+      ratio_eta->SetMinimum(-0.5);
+    } if ( det == "t2k" ) {
+      ratio_eta->SetMaximum(1.5);
+      ratio_eta->SetMinimum(0.2);
+    }
+    
+
+
+    // drawing
+    ratio_eta->Draw("A P");
+    ratio_pi0->Draw("same P");
+    ratio_eta->GetYaxis()->SetTitle("Simulation/published");
+    ratio_eta->SetTitle("");
+    
+    // y axis
+    sim_eta_flux->GetYaxis()->SetTitleSize(0.05);
+    sim_eta_flux->GetYaxis()->SetTitleOffset(0.7);
+    ratio_eta->GetYaxis()->SetTitleSize(0.09);
+    ratio_eta->GetYaxis()->SetTitleOffset(0.4);
+    ratio_eta->GetYaxis()->SetLabelSize(0.1);
+    sim_eta_flux->GetYaxis()->CenterTitle();
+    //ratio_eta->GetYaxis()->CenterTitle();
+    
+    // x axis
+    sim_eta_flux->GetXaxis()->SetLabelSize(0.0);
+    sim_eta_flux->GetXaxis()->SetTitleSize(0.0);
+    ratio_eta->GetXaxis()->SetLabelSize(0.12);
+    ratio_eta->GetXaxis()->SetTitleSize(0.14);
+    ratio_eta->GetXaxis()->CenterTitle();
+    
+    //ratio_eta->G
+    Double_t xrange = ratio_eta->GetHistogram()->GetBinLowEdge(101);
+    TLine *line1 = new TLine(0,1,xrange,1);
+    TLine *line10 = new TLine(0,10,xrange,10);
+    TLine *line01 = new TLine(0,0.1,xrange,0.1);
+    line1->SetLineStyle(7);
+    line10->SetLineStyle(7);
+    line01->SetLineStyle(7);
+
+    // line drawing
+    if ( det != "dune" ) {
+      line1->Draw("same");
+      if ( ratio_eta->GetMaximum() > 10 ) {
+	line10->Draw("same");
+      }
+      if ( ratio_eta->GetMinimum() < 0.1 ) {
+	line01->Draw("same");
+      }
+    }
+    ratio_eta->Draw("same P"); // redraw points on top of lines
+    ratio_pi0->Draw("same P"); // redraw points on top of lines
+    //c3->SaveAs("img/2padDifferenceAccepted_"+det+"_.pdf");
+    
+    c3->SaveAs("img/PassingThroughDetector/Acc_Flux_"+det+"_s.png");
+    c3->SaveAs("img/PassingThroughDetector/Acc_Flux_"+det+"_s.pdf");
   }
 }
