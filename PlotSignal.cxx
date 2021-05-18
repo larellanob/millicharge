@@ -207,14 +207,14 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
     POT_norm = 1e20/500000.;
   } else if ( detector == "dune" ) {
     POT_norm = 1e21/500000.;
-  } else if ( detector == "duneOrnella" ) {
+  } else if ( detector == "duneArgo" ) {
     POT_norm = 3*1e22/500000.;
   } else if ( detector == "uboone" ) {
     POT_norm = 1e21/500000.;
   }
 
   
-  if ( detector == "argoneut" || detector == "duneOrnella" ) {
+  if ( detector == "argoneut" || detector == "duneArgo" ) {
     result = POT_norm*value3*(events/sum_weight_decay)*decay_factor_zhenliu;
     std::cout << "USING DECAY FACTOR decay_factor_zhenliu" << std::endl;
   } else if ( detector == "uboone" || detector == "dune" || detector == "naiveuboone" ) { 

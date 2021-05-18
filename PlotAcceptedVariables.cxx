@@ -99,7 +99,7 @@ void GenerateHistograms(TString fstr,TString detector) {
     POT = 1e20/500000.;
   } else if ( detector == "dune" ) {
     POT = 1e21/500000.;
-  } else if ( detector == "duneOrnella" ) {
+  } else if ( detector == "duneArgo" ) {
     POT = 3*1e22/500000.;
   } else if ( detector == "uboone" ) {
     POT = 1e21/500000.;
@@ -107,7 +107,17 @@ void GenerateHistograms(TString fstr,TString detector) {
   std::cout << "mCP Weights " << AccFlux->GetBinContent(1) << std::endl;
   double phase_space_supression = CrossSection(*mass,*meson,"physrevd");
   double epsilon = 0.01;
-  AccFlux->Scale(POT*phase_space_supression*epsilon*epsilon);
+  if ( detector == "argoneut" || detector == "duneArgo" ) {
+    AccFlux->Scale(POT*phase_space_supression*epsilon*epsilon);
+  }
+  if ( detector == "dune" ) {
+    AccFlux->Scale(POT*phase_space_supression);
+  }
+  if ( detector == "t2k" ) {
+    phase_space_supression = CrossSection(*mass,*meson,"t2k");
+    AccFlux->Reset();
+    AccFlux->Fill(0.5,phase_space_supression);
+  }
   std::cout << "mass, meson " << *mass << " " << *meson << std::endl;
   std::cout << "PS supression " << phase_space_supression << std::endl;
   std::cout << "POT " << POT << std::endl;
@@ -137,7 +147,7 @@ void GenerateHistograms(TString fstr,TString detector) {
   AccFileOut->Close();
 }
 
-void PlotAcceptedVariables(Bool_t Generate = false)
+void PlotAcceptedVariables(Bool_t Generate = true)
 {
   CreateEmptyDirs();
   std::vector<TString> mass_points_pi0 =
@@ -176,6 +186,7 @@ void PlotAcceptedVariables(Bool_t Generate = false)
   std::vector<TString> detectors =
     {
      //"dune",
+     //"t2k",
      //"uboone",
      "argoneut"
     };
@@ -184,16 +195,21 @@ void PlotAcceptedVariables(Bool_t Generate = false)
   TFile *f = new TFile();
   TH1F *h1;
   TH1F *htitle;
-  std::vector<TH1F *> h1v;
   
   if ( Generate == true ) {
     for ( TString det: detectors ) {
       for ( TString mass: mass_points_pi0 ) {
 	TString generate_file = "sim/mCP_"+det+"_q_0.010_m_"+mass+"_fhc_pi0s.root";
+	if ( det == "t2k" ) {
+	  generate_file = "sim/mCP_argoneut_q_0.010_m_"+mass+"_fhc_pi0s.root";
+	}
 	GenerateHistograms(generate_file,det);
       }
       for ( TString mass: mass_points_eta ) {
 	TString generate_file = "sim/mCP_"+det+"_q_0.010_m_"+mass+"_fhc_etas.root";
+	if ( det == "t2k" ) {
+	  generate_file = "sim/mCP_argoneut_q_0.010_m_"+mass+"_fhc_etas.root";
+	}
 	GenerateHistograms(generate_file,det);
       }
     }
@@ -293,7 +309,7 @@ void PlotAcceptedVariables(Bool_t Generate = false)
     TString det_formal;
     if ( det == "uboone" || det == "naiveuboone" ) {
       det_formal = "MicroBooNE";
-    } else if ( det == "dune" || det == "duneOrnella" ) {
+    } else if ( det == "dune" || det == "duneArgo" ) {
       det_formal = "DUNE";
     } else if ( det == "argoneut" ) {
       det_formal = "ArgoNeuT";
@@ -431,7 +447,7 @@ void PlotAcceptedVariables(Bool_t Generate = false)
     }
     
     // top pad range
-    if ( det == "duneOrnella" ) {
+    if ( det == "duneArgo" ) {
       sim_eta_flux->SetMinimum(1e8);
       sim_eta_flux->SetMaximum(1e17);
     } else if ( det == "t2k" ) {
@@ -453,7 +469,7 @@ void PlotAcceptedVariables(Bool_t Generate = false)
       pub_pi0_flux->SetTitle("#pi^{0} Phys. Rev. D 100, 015043");
       pub_eta_flux->SetTitle("#eta Phys. Rev. D 100, 015043");
     } else if ( det == "argoneut" ||
-		det == "duneOrnella" ||
+		det == "duneArgo" ||
 		det == "uboone" ) {
       pub_pi0_flux->SetTitle("#pi^{0} arXiv:1902.03246");
       pub_eta_flux->SetTitle("#eta arXiv:1902.03246");
@@ -466,7 +482,7 @@ void PlotAcceptedVariables(Bool_t Generate = false)
     // title after legend is built
     if ( det == "dune" ) {
       sim_eta_flux->SetTitle("Validation with FerMINI group: "+det_formal+" detector");
-    } else if ( det == "argoneut" || det == "duneOrnella" ) {
+    } else if ( det == "argoneut" || det == "duneArgo" ) {
       sim_eta_flux->SetTitle("Validation with ArgoNeuT group: "+det_formal+" detector");
     } else if ( det == "t2k" ) {
       sim_eta_flux->SetTitle("Validation with T2K group: Branching ratio only");
@@ -492,12 +508,12 @@ void PlotAcceptedVariables(Bool_t Generate = false)
     if ( det == "argoneut" ||
 	 det == "uboone" ||
 	 det == "naiveuboone" ||
-	 det == "duneOrnella"
+	 det == "duneArgo"
 	 ) {
       pad2->SetLogy();
     } if ( det == "dune" ) {
-      ratio_eta->SetMaximum(5.5);
-      ratio_eta->SetMinimum(-0.5);
+      ratio_eta->SetMaximum(2.2);
+      ratio_eta->SetMinimum(-0.3);
     } if ( det == "t2k" ) {
       ratio_eta->SetMaximum(1.5);
       ratio_eta->SetMinimum(0.2);
