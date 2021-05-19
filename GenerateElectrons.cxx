@@ -29,6 +29,7 @@ void GenerateElectrons
   std::vector<ROOT::Math::PxPyPzEVector> electron_pos;
   std::vector<Double_t> weight;
   auto electron_recoil = [mass_mcp,
+			  charge_mcp,
 			  &electron_mom,
 			  &electron_pos,
 			  &weight](TLorentzVector pos,
@@ -37,48 +38,45 @@ void GenerateElectrons
 			   electron_mom.clear();
 			   electron_pos.clear();
 			   weight.clear();
-			   TLorentzVector e_rest(0.0,0.0,0.0,0.000511);
+			   Double_t e_mass = 0.000511;
+			   TLorentzVector e_rest(0.0,0.0,0.0,e_mass);
 			   TLorentzVector W = mom+e_rest;
+			   
 			   TGenPhaseSpace recoil;
-			   Double_t masses[2] = {mass_mcp,0.000511};
+			   Double_t masses[2] = {mass_mcp,e_mass};
 			   recoil.SetDecay(W,2,masses);
 
+			   // NOTE: weight will be 1 in a two-body decay
+			   Double_t recoil_weight;
 			   // n electrons per each mcp
-			   int n = 10;
+			   int n = 3;
 			   for ( int i = 0; i < n; i++ ) {
-			     Double_t recoil_weight = recoil.Generate();
+			     recoil_weight = recoil.Generate();
 			     weight.push_back(recoil_weight);
 			     TLorentzVector *mcp_recoil = recoil.GetDecay(0);
 			     TLorentzVector *aux = recoil.GetDecay(1);
+			     // sample electron recoil energy from cross section
+			     Double_t Er,pxr,pyr,pzr;
+			     Er = DetectorInteraction(aux->T(),mass_mcp,charge_mcp)/1000.;
+			     Double_t lambda = aux->T()/Er;
+			     Double_t rho = sqrt((lambda*lambda*aux->P()*aux->P())/(aux->E()*aux->E()-lambda*lambda*e_mass*e_mass));
+			    
+			     Er = aux->T()/lambda;
+			     pxr = aux->Px()/rho;
+			     pyr = aux->Py()/rho;
+			     pzr = aux->Pz()/rho;
+			     
+			     ROOT::Math::PxPyPzEVector adje_recoil(pxr,pyr,pzr,Er);
 			     ROOT::Math::PxPyPzEVector e_recoil(aux->X(),aux->Y(),aux->Z(),aux->T());
+			     
 			     ROOT::Math::PxPyPzEVector e_pos(aux->X()+1.0,aux->Y(),aux->Z(),aux->T());
 			     electron_mom.push_back(e_recoil);
 			     electron_pos.push_back(e_pos);
 			     //return *aux;
-			     }
-			     return electron_mom;
+			   }
+			   return electron_mom;
 			 };
   
-  //df_mcp.ForEach(electron_recoil,{"Pos","Mom"});
-  /*
-  auto dnew = df_mcp.Define("Mom_e",[&electron_recoil](TLorentzVector pos, TLorentzVector mom){
-				      int n = 10;
-				      for ( int i = 0; i < n; i++ ) {
-					electron_recoil(pos,mom);
-				      }
-				      
-				    },{"Pos","Mom"})
-    .Define("Pos_e",[&electron_pos](){return electron_pos; })
-    .Define("Weight_e",[&weight]() {return weight;})
-    .Define("E",[&electron_mom](){
-		  std::vector<Double_t> E; 
-		  for ( int i = 0; i < electron_mom.size(); i++ ) {
-		    E.push_back(electron_mom[i].E());
-		  }
-		  return E;
-		})
-    ;
-  */
 
   auto dnew = df_mcp.Define("Mom_e",electron_recoil,{"Pos","Mom"})
     .Define("Pos_e",[&electron_pos](){return electron_pos; })
@@ -97,8 +95,8 @@ void GenerateElectrons
   auto outFileName = "test.root";
   //dnew.Snapshot<std::vector< ROOT::Math::PxPyPzEVector>>("ee",outFileName,{"Mom_e","Pos_e"});
   dnew.Snapshot("ee",outFileName,{"Mom_e","Pos_e","Weight_e","E"});
-  auto fileName = "df002_dataModel.root";
-  auto treeName = "myTree";
+  //auto fileName = "df002_dataModel.root";
+  //auto treeName = "myTree";
   //fill_tree(fileName, treeName);
   
 }

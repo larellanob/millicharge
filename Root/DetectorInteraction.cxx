@@ -53,6 +53,8 @@ Double_t DetectorInteraction(Double_t Echi, Double_t mchi, Double_t epsilon)
   dif->SetParameters(Echi,mchi,epsilon);
   tot->SetParameters(Echi,mchi,epsilon,Emin);
 
+  //auto *c1 = new TCanvas();
+  //dif->Draw("L");
   // cross section
   // generates random seed
   //gRandom= new TRandom3(0);
