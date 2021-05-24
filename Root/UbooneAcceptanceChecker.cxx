@@ -1,7 +1,7 @@
-Double_t intersects(const TVector3 &,
-		    const TVector3 &,
-		    const TVector3 &,
-		    const TVector3 &);
+std::vector<TVector3> intersects(const TVector3 &,
+				 const TVector3 &,
+				 const TVector3 &,
+				 const TVector3 &);
 
 Double_t UbooneAcceptanceChecker(TVector3 pos, TVector3 mom )
 {
@@ -49,8 +49,9 @@ Double_t UbooneAcceptanceChecker(TVector3 pos, TVector3 mom )
   pos = (rot*pos)+beampos;
   mom = rot*mom;
   // these should be now in uboone frame of reference
-  
-  return intersects(pos,mom,det_centre,det_half_dims);
+
+  auto entry_exit_points = intersects(pos,mom,det_centre,det_half_dims);
+  return (entry_exit_points[0]-entry_exit_points[1]).Mag();
   
   
   //return false;
@@ -58,17 +59,18 @@ Double_t UbooneAcceptanceChecker(TVector3 pos, TVector3 mom )
 
 
 
-Double_t intersects(const TVector3 &orig, // origin
-		const TVector3 &dir, // direction of the mcp?
-		const TVector3 &det_centre, // center of the detector
-		const TVector3 &det_half_dims//half the size of the detector?
-		)
+std::vector<TVector3> intersects(const TVector3 &orig, // origin
+				 const TVector3 &dir, // direction of the mcp?
+				 const TVector3 &det_centre, // center of the detector
+				 const TVector3 &det_half_dims//half the size of the detector?
+				 )
 //		  double* lambdas)
 {
   const TVector3& unit_dir = dir.Unit();// unitary vector for direction
   int n_intersects = 0; // number of interections?
   unsigned int ilam = 0; // index of the lambda
 
+  std::vector<TVector3> entry_exit_points;
   TVector3 intersection1(0,0,0);
   TVector3 intersection2(0,0,0);
   
@@ -127,7 +129,8 @@ Double_t intersects(const TVector3 &orig, // origin
   /*
   if ( n_intersects == 2 ) {
     
-    if ( (intersection1-intersection2).Mag()  > 500. ) {
+    if ( (intersection1-intersection2).Mag()  > 50. ) {
+      std::cout << "UbooneAcceptanceChecker: two intersections" << std::endl;
       intersection1.Print();
       intersection2.Print();
       
@@ -140,7 +143,12 @@ Double_t intersects(const TVector3 &orig, // origin
 
   // returns distance travelled inside the detector
   // if it doesn't reach the detector returns 0
-  return (intersection1-intersection2).Mag();
+
+  // are you sure intersection1 is always the entry??
+  entry_exit_points.push_back(intersection1);
+  entry_exit_points.push_back(intersection2);
+  return entry_exit_points;
+  //return (intersection1-intersection2).Mag();
   //return n_intersects >= 2; // returns a bool
   // true if n_int >=2 , false if <
 }

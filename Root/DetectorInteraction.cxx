@@ -49,12 +49,15 @@ Double_t DetectorInteraction(Double_t Echi, Double_t mchi, Double_t epsilon)
   Double_t *Emaxptr = &Emax;
 
   TF1 * dif = new TF1("DetDiffCrossSection",DetDiffCrossSection,Emin,Emax,3);
-  TF1 * tot = new TF1("DetTotalCrossSection",DetTotalCrossSection,Emin,Emax,4);
+  //TF1 * tot = new TF1("DetTotalCrossSection",DetTotalCrossSection,Emin,Emax,4);
   dif->SetParameters(Echi,mchi,epsilon);
-  tot->SetParameters(Echi,mchi,epsilon,Emin);
+  //tot->SetParameters(Echi,mchi,epsilon,Emin);
 
-  //auto *c1 = new TCanvas();
-  //dif->Draw("L");
+  /*
+  auto *c1 = new TCanvas();
+  dif->Draw("L");
+  c1->SaveAs("./img/DiffCrossSect.png");
+  */
   // cross section
   // generates random seed
   //gRandom= new TRandom3(0);
