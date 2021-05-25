@@ -9,8 +9,8 @@ void GenerateElectrons
 )
 {
   CreateEmptyDirs();
-  //TFile *f = new TFile
-  //TFile*f = new TFile
+
+  // INPUT
   ROOT::RDataFrame df_mcp("mCP",mcp_file.Data());
   ROOT::RDataFrame df_metadata("Metadata",mcp_file.Data());
   auto meson  = df_metadata.Take<TString>("Mother").GetValue()[0];
@@ -18,11 +18,17 @@ void GenerateElectrons
   auto charge_mcp = df_metadata.Take<Double_t>("mCPcharge").GetValue()[0];
   auto mass_mcp   = df_metadata.Take<Double_t>("mCPmass").GetValue()[0];
 
+  // PARAMETERS
+  int n_hits = 5;
   Double_t recoil_threshold = 1000; // detection threshold in keV
   TString electron_output_filename
-    = Form("sim/e_%s_q_%.3f_m_%.3f_%s_%ss.root",
-	   detector.Data(),charge_mcp,mass_mcp,horn.Data(),meson.Data());
+    = Form("sim/e_%s_q_%.3f_m_%.3f_%s_%ss_%ihits",
+	   detector.Data(),charge_mcp,mass_mcp,horn.Data(),meson.Data(),n_hits);
 
+  // OUTPUT
+  auto outFileName = electron_output_filename;
+  ofstream out_hepevt;
+  out_hepevt.open(Form("%s.txt",outFileName.Data()));
   
   // detector half-dimensions in cm
   const TVector3 det_half_dims(0.5*(246.35-10.),0.5*(107.47+105.53),.5*(1026.8-10.1));
@@ -60,31 +66,37 @@ void GenerateElectrons
   
   
 
-  
-  // electron recoil lambda
-  int n_hits = 5;
+  ///////////////////////////
+  // electron recoil
   int event_counter = 0;
-  
-  //ROOT::VecOps::RVec<TLorentzVector> electron_mom;
+    
   std::vector<ROOT::Math::PxPyPzEVector> electron_mom_vector;
   std::vector<ROOT::Math::PxPyPzEVector> electron_pos_vector;
   std::vector<Double_t> weight;
+  std::vector<TString> hepevt_line;
+
+
+  /// electron recoil energy-momemtum
   auto electron_recoil = [ mass_mcp,
 			   charge_mcp,
 			   n_hits,
 			   rot,
 			   beampos,
 			   &event_counter,
+			   &out_hepevt,
 			   &electron_mom_vector,
-			   &weight]( TLorentzVector mom )
+			   &weight,
+			   &hepevt_line
+			   ]( TLorentzVector mom )
 			 {
 			   event_counter++;
+			   out_hepevt << Form("%i",event_counter) << " " << n_hits << "\n";
 			   TVector3 mom3v = mom.Vect();
 			   mom3v = rot*mom3v;
 			   mom.SetVect(mom3v);
-			   
 			   electron_mom_vector.clear();
 			   weight.clear();
+			   hepevt_line.clear();
 			   Double_t e_mass = 0.000511;
 			   TLorentzVector e_rest(0.0,0.0,0.0,e_mass);
 			   TLorentzVector W = mom+e_rest;
@@ -114,30 +126,32 @@ void GenerateElectrons
 			     // adjusted electron
 			     ROOT::Math::PxPyPzEVector adj_e_recoil(pxr,pyr,pzr,Er);
 			     ROOT::Math::PxPyPzEVector e_recoil(aux->X(),aux->Y(),aux->Z(),aux->T());
-
+			     hepevt_line.push_back(Form("1 11 0 0 0 0 %f %f %f %f %f ",pxr,pyr,pzr,Er,e_mass));
 			     // the position needs time, use beta from the momentum 4vector
 			     electron_mom_vector.push_back(adj_e_recoil);
 			   }
 			   return electron_mom_vector;
 			 };
-
+  
+  /// electron recoil time-position
   auto electron_spawn = [ n_hits,
 			  rot,
 			  beampos,
 			  det_half_dims,
 			  det_centre,
+			  &out_hepevt,
 			  &event_counter,
 			  &electron_pos_vector,
-			  &weight]( TLorentzVector pos, TLorentzVector mom )
+			  &weight,
+			  &hepevt_line
+			  ]( TLorentzVector pos, TLorentzVector mom )
 			{
 			  electron_pos_vector.clear();
-			  
 			  TVector3 pos3v = pos.Vect();
 			  TVector3 mom3v = mom.Vect();
 			  pos3v = (rot*pos3v)+beampos;
 			  mom3v = rot*mom3v;
 			  auto entry_exit_points = intersects(pos3v,mom3v,det_centre,det_half_dims);
-			  // not sure why it is [0]-[1], I thought it would be [1]-[0]
 			  TVector3 travel;
 			  Int_t entry_index;
 			  // will use z coordinate to determine which are entry and exit points through uboone
@@ -149,61 +163,45 @@ void GenerateElectrons
 			    entry_index = 0;
 			    entry_pos = entry_exit_points[0];
 			    exit_pos = entry_exit_points[1];
-			    travel = entry_exit_points[1] - entry_exit_points[0];
 			  } else if ( exit_z == entry_exit_points[0].Z() ) {
 			    entry_index = 1;
 			    entry_pos = entry_exit_points[1];
 			    exit_pos = entry_exit_points[0];
-			    travel = entry_exit_points[0] - entry_exit_points[1];
 			  }
-			  
+			  travel = exit_pos - entry_pos;
 			  // TIMING
-			  // arrival time to detector in seconds
+			  // arrival time to detector in nanoseconds
 			  Double_t t_in = 0;
-			  t_in = pos.T() + (entry_pos-pos3v).Mag()/(mom.Beta()*2.99792e10);
-			  
+			  t_in = pos.T() + ((entry_pos-pos3v).Mag()/(mom.Beta()*2.99792e10))*1e9;
+			  // this is giving us the 'same' hit distribution every time (uses same random seed)
 			  TRandom randy;
-			  //std::cout << "greatest hits: " << std::endl;
 			  for ( int i = 0; i < n_hits; i++ ) {
-			    Double_t random_z = randy.Uniform(entry_z,exit_z);
+			    Double_t random_z = randy.Uniform(0,exit_z-entry_z);
 			    Double_t lambda = random_z/travel.Z();
-			    //std::cout << lambda << std::endl;
-			    TVector3 hit_pos = lambda*travel;
-			    Double_t hit_time = t_in + (hit_pos-entry_pos).Mag()/(mom.Beta()*2.99792e10);
+			    // recoil electron position
+			    TVector3 hit_pos = entry_pos + lambda*travel;
+			    // recoil electron time
+			    Double_t hit_time = t_in + ((lambda*travel).Mag()/(mom.Beta()*2.99792e10))*1e9;
 			    ROOT::Math::XYZTVector hit_4v(hit_pos.X(),hit_pos.Y(),hit_pos.Z(),hit_time);
-			    //TLorentzVector hit4v (hit_pos,hit_time);
-			    //hit4v.Print();
-			    //hit_pos.Print();
 			    electron_pos_vector.push_back(hit_4v);
+			    // write to hepevt file
+			    hepevt_line[i]+=Form("%f %f %f %f\n",hit_pos.X(),hit_pos.Y(),hit_pos.Z(),hit_time);
 			  }
-			  //pos.SetVect(pos3v);
-			  //pos = (rot*pos) + beampos;
-			  // the position needs time, use beta from the momentum 4vector
-			  
-
+			  // write to hepevt file
+			  for ( int i = 0; i < n_hits; i++ ) {
+			    out_hepevt << hepevt_line[i];
+			  }
 			  return electron_pos_vector;
 			};
   
   auto dnew = df_mcp.Define("Mom_e",electron_recoil,{"Mom"})
-    //.Define("Pos_e",[&electron_pos_vector](){return electron_pos_vector; })
     .Define("Pos_e",electron_spawn,{"Pos","Mom"})
     .Define("Weight_e",[&weight]() {return weight;})
-    .Define("E",[&electron_mom_vector](){
-		  std::vector<Double_t> E; 
-		  for ( int i = 0; i < electron_mom_vector.size(); i++ ) {
-		    E.push_back(electron_mom_vector[i].E());
-		  }
-		  return E;
-		})
     ;
 
-  //auto h1 = dnew.Histo1D("E[0]");
 
-  auto outFileName = "test.root";
-  //dnew.Snapshot<std::vector< ROOT::Math::PxPyPzEVector>>("ee",outFileName,{"Mom_e","Pos_e"});
-  dnew.Snapshot("ee",outFileName,{"Mom_e","Pos_e","Weight_e","E"});
-  //auto fileName = "df002_dataModel.root";
-  //auto treeName = "myTree";
-  //fill_tree(fileName, treeName);
+  TString out_root = (TString)outFileName+".root";
+  dnew.Snapshot("ee",out_root.Data(),{"Mom_e","Pos_e","Weight_e"})
+    ;
   
 }
