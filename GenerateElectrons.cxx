@@ -182,6 +182,7 @@ void GenerateElectrons
 			    TVector3 hit_pos = entry_pos + lambda*travel;
 			    // recoil electron time
 			    Double_t hit_time = t_in + ((lambda*travel).Mag()/(mom.Beta()*2.99792e10))*1e9;
+			    hit_time += 5627.5; // time offset (in ns)
 			    ROOT::Math::XYZTVector hit_4v(hit_pos.X(),hit_pos.Y(),hit_pos.Z(),hit_time);
 			    electron_pos_vector.push_back(hit_4v);
 			    // write to hepevt file
