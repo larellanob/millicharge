@@ -35,17 +35,20 @@ Double_t DetTotalCrossSection(Double_t *Er, Double_t *par) {
 }
 
 // returns probability distribution of recoil energy
-Double_t DetectorInteraction(Double_t Echi, Double_t mchi, Double_t epsilon)
+Double_t DetectorInteraction(Double_t Echi, Double_t mchi, Double_t epsilon, Double_t threshold = 1000, Bool_t kPrint = false)
 {
   // minimum recoil energy in GeV, given by experiment detection
-  // threshold
-  Double_t Emin = 0.001;
+  // threshold is given in keV
+  Double_t Emin = threshold*1e-6;
   
   // electron mass
   Double_t mele = 0.00051099891;
   
   // maximal kinematically allowed recoil energyu
   Double_t Emax = ((Echi*Echi-mchi*mchi)*mele)/(mchi*mchi + 2*Echi*mele + mele*mele);
+  if ( Emax < Emin ) {
+    return 0;
+  }
   Double_t *Emaxptr = &Emax;
 
   TF1 * dif = new TF1("DetDiffCrossSection",DetDiffCrossSection,Emin,Emax,3);
@@ -53,11 +56,15 @@ Double_t DetectorInteraction(Double_t Echi, Double_t mchi, Double_t epsilon)
   dif->SetParameters(Echi,mchi,epsilon);
   //tot->SetParameters(Echi,mchi,epsilon,Emin);
 
-  /*
-  auto *c1 = new TCanvas();
-  dif->Draw("L");
-  c1->SaveAs("./img/DiffCrossSect.png");
-  */
+  if ( kPrint ) {
+    auto *c1 = new TCanvas();
+    TTimeStamp ts;
+    dif->Draw("L");
+    dif->GetXaxis()->SetTitle("Energy (GeV)");
+    TString savefile = Form("./img/cross_sect/DiffCrossSect_%i_%i.png",ts.GetTime(),ts.GetNanoSec());
+    c1->SaveAs(savefile);
+  }
+  
   // cross section
   // generates random seed
   //gRandom= new TRandom3(0);
