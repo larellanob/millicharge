@@ -187,8 +187,8 @@ void PlotAcceptedVariables(Bool_t Generate = true)
     {
      //"dune",
      //"t2k",
-     //"uboone",
-     "argoneut"
+     "uboone",
+     //"argoneut"
     };
 
   TString input_dir = "hist/";
