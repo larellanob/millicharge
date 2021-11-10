@@ -1,6 +1,6 @@
-void ClearParameterSpaceTH2F(TString detector = "uboone")
+void ClearParameterSpaceTH2F(TString detector = "uboone", bool multithreshold = false)
 {
-  TFile *f = new TFile("hist/Lim_"+detector+".root","recreate");
+  
 
 
   const Float_t xaxis[29] = {9.5,15,25,35,45,55,65,75,85,95,
@@ -16,18 +16,53 @@ void ClearParameterSpaceTH2F(TString detector = "uboone")
 		       1.5e-1, 2.5e-1
   };
 
-  
-  
-		       //0.00005,0.00015,0.00025,0.00035,0.00045,0.00055,0.00065,0.00075,0.00085,0.00095,
-  
-  //TH2 * lim = new TH2F("lim",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
+
   TH2 * lim1hit = new TH2F("lim1hit",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
   TH2 * lim2hit = new TH2F("lim2hit",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
   TH2 * lim3hit = new TH2F("lim3hit",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
   TH2 * lim4hit = new TH2F("lim4hit",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
-  lim1hit->Write();
-  lim2hit->Write();
-  lim3hit->Write();
-  lim4hit->Write();
 
+  TFile *f;
+
+
+  
+  if ( multithreshold == false ) {
+    f = new TFile("hist/Lim_"+detector+".root","recreate");
+    lim1hit->Write();
+    lim2hit->Write();
+    lim3hit->Write();
+    lim4hit->Write();
+  } else if ( multithreshold == true ) {
+    std::vector<TString> thresholds = {
+      "0.1",
+      "0.6",
+      "0.8",
+      "1.0"
+    };
+    for ( auto th: thresholds ) {
+      f = new TFile("hist/Lim_"+detector+"_"+th+".root","recreate");
+      lim1hit->Write();
+      lim2hit->Write();
+      lim3hit->Write();
+      lim4hit->Write();
+    }
+
+    /*
+    for ( auto th: thresholds ) {
+      f = new TFile("hist/Lim_"+detector+"_"+th+".root","recreate");
+      std::cout << "doing it" << std::endl;
+      TH2F lim1hit_th("lim_1hit_"+th+"thres",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
+      TH2F lim2hit_th("lim_2hit_"+th+"thres",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
+      TH2F lim3hit_th("lim_3hit_"+th+"thres",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
+      TH2F lim4hit_th("lim_4hit_"+th+"thres",";m_{#chi} (MeV);#epsilon",28,xaxis,29,yaxis);
+      lim1hit_th.Write();
+      lim2hit_th.Write();
+      lim3hit_th.Write();
+      lim4hit_th.Write();
+    }
+    */
+  }
+  
+  
+  
 }
