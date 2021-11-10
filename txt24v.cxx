@@ -27,7 +27,7 @@ void txt24v(TString txtfile) {
   ifstream in;
   in.open(Form("%s",txtfile.Data()));
   
-  auto f = TFile::Open("sim/"mode+"_tree.root","RECREATE");
+  auto f = TFile::Open("sim/"+mode+"_tree.root","RECREATE");
   Float_t Px,Py,Pz,E,x,y,z,t,weight;
   Int_t event;
 
