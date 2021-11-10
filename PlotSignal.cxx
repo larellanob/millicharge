@@ -3,10 +3,42 @@
 #include "Root/DetectorInteraction.cxx"
 #include "Root/CreateEmptyDirs.cxx"
 
-Double_t mean_path(Double_t epsilon, Double_t Emin )
+Double_t emax ( double m_chi, double E_chi ) {
+  double m_e         = 0.511;
+  return ((E_chi*E_chi-m_chi*m_chi)*m_e)/(m_chi*m_chi+2*E_chi*m_e+m_e*m_e);
+}
+
+Double_t det_interaction(double Ermin,
+			 double Ermax,
+			 double m_chi,
+			 double charge){
+  double alpha       = 1./137.;
+  double m_e         = 0.511;
+  double constant    = TMath::Pi()*alpha*alpha*charge*charge;
+  double denominator = (Ermax*Ermin*(E_chi*E_chi-m_chi*m_chi)*m_e*m_e);
+  double first_term  = m_e*(Ermax-Ermin)*(2*E_chi*E_chi + Ermax*Ermin);
+  double second_term = Ermax*Ermin*(m_chi*m_chi+m_e*(2*E_chi+m_e))*log(Ermax/Ermin);
+  double result      = constant*(first_term-second_term)/denominator;
+  return result;
+}
+
+Double_t mean_path(Double_t epsilon, Double_t Emin ) {
+  return pow((0.01)/epsilon,2)*(Emin/0.001)*1.;
+}
+
+Double_t mean_path2(Double_t epsilon, Double_t Emin, Double_t Emax, Double_t m_chi )
 {
   // returns mean path in km
-  return pow((0.01)/epsilon,2)*(Emin/0.001)*1.;
+  double Z  = 18.;
+  double NA = 6.022e23;
+  double rho = 1.3954;
+  double m_a = 39.948;
+  double n_det = NA*rho/m_a;
+
+  double xsec_cm = det_interaction(Emin,Emax,m_chi,epsilon)/(8.06554e9*8.06554e9);
+  double result = 1./(Z*n_det*xsec_cm); // mean free path in cm
+  result *= 0.01;                       // mean fre path in m
+  return result;
 }
 
 Double_t prob_hit(Double_t mean_path, Double_t Length, Int_t hits)
@@ -155,7 +187,8 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
     // travelled from cm to km
     travelled *= 0.00001;
     for ( int i = 0; i < 29; i++ ) {
-      Double_t meanpath = mean_path(charges[i],0.0008);
+      //Double_t meanpath = mean_path(charges[i],0.0008);
+      Double_t meanpath = mean_path2(charges[i],0.0008,emax(*mass,Mom.E()),*mass);
       /*
       if ( travelled/meanpath > 0.01 ) {
 	std::cout << Form("WARNING: mean path (%.3f) close to travel length (%.3f) for charge %.3f",meanpath,travelled,charges[i]) << std::endl;
@@ -228,7 +261,8 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
 
   // DO LIMITS
   // UNCOMMENT
-  TFile *LimitsFileUpdate = new TFile("hist/Sig_"+detector+".root","update");
+  std::cout << "all good" << std::endl;
+  TFile *LimitsFileUpdate = new TFile("hist/Lim_"+detector+".root","update");
   TH2F * lim1hit;
   lim1hit = (TH2F*)gDirectory->Get("lim1hit");
   TH2F * lim2hit;
@@ -237,9 +271,10 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
   lim3hit = (TH2F*)gDirectory->Get("lim3hit");
   TH2F * lim4hit;
   lim4hit = (TH2F*)gDirectory->Get("lim4hit");
-
+  //LimitsFileUpdate->Write();
 
   if ( detector == "argoneut_published" ) {
+    std::cout << "det = argo published" << std::endl;
     Double_t meanpath = mean_path(0.01,0.001);
     Double_t travelled = 90.; // 90cm = z axis detector length
     travelled*=0.0001; // in km
@@ -299,6 +334,7 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
     lim4hit->Write();
 
   }
+  std::cout << "not good" << std::endl;
   // this are the axes of the limit plot as reference
   /*
   const Float_t xaxis[29] = {9.5,15,25,35,45,55,65,75,85,95,
@@ -342,10 +378,30 @@ void PlotSignal(TString fstr = "sim/mCP_uboone_q_0.010_m_0.010_fhc_etas.root",
       lim3hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs3hit[i]*charges[i]*charges[i]);
       lim4hit->Fill(*mass*1000.,charges[i],POT_norm*(events/sum_weight_decay)*decay_factor_physrevd*probs4hit[i]*charges[i]*charges[i]);
       */
+      std::cout << "about to fill " << std::endl;
+      std::cout << "mass" << std::endl;
+      std::cout << *mass << std::endl;
+      std::cout << "charges[i]" << std::endl;
+      std::cout << charges[i] << std::endl;
+      std::cout << "POTNORM " << std::endl;
+      std::cout << POT_norm << std::endl;
+      std::cout << "decay factor " << std::endl;
+      std::cout << decay_factor_physrevd << std::endl;
+      std::cout << "probs 1hit " << std::endl;
+      std::cout << probs1hit[i] << std::endl;
+      std::cout << "probs 2hit " << std::endl;
+      std::cout << probs2hit[i] << std::endl;
+      std::cout << "probs 3hit " << std::endl;
+      std::cout << probs3hit[i] << std::endl;
+      std::cout << "probs 4hit " << std::endl;
+      std::cout << probs4hit[i] << std::endl;
+      
       lim1hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs1hit[i]*charges[i]*charges[i]);
+      std::cout << "filling failing" << std::endl;
       lim2hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs2hit[i]*charges[i]*charges[i]);
       lim3hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs3hit[i]*charges[i]*charges[i]);
       lim4hit->Fill(*mass*1000.,charges[i],POT_norm*decay_factor_physrevd*probs4hit[i]*charges[i]*charges[i]);
+
     }
     lim1hit->Write();
     lim2hit->Write();
