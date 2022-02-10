@@ -261,29 +261,39 @@ void MultiDraw(std::vector<TGraph * > published, std::vector<std::vector<std::ve
   std::cout << "loop over thresholds " << std::endl;
   //////////////////////
   // loop over thesholds
+  bool draw_clean = true;
   for ( int i2 = 0; i2 < limits[0].size(); i2++ ) {
     for ( int i3 = 0; i3 < limits[0][0].size(); i3++ ) {
       auto c1 = new TCanvas();
       c1->SetLogy();
       c1->SetLogx();
       c1->SetLogz();
-      dummy->SetTitle(Form("#muBooNE - %i-hit signal events, %i scatters",events[i2],nhits_vector[i3]));
+
       dummy->Draw("text");
       published[3]->Draw("L");
       published[0]->Draw("L");
-      //published[1]->Draw("L"); // pheno estimate
+      published[1]->Draw("L"); // pheno estimate
       published[2]->Draw("L");
       published[4]->Draw("L");
       published[5]->Draw("L");
   
       TLegend *myleg = new TLegend(0.5,0.15,0.9,0.45);
       myleg->AddEntry(published[0]);
-      // myleg->AddEntry(published[1]); pheno estimate
+      myleg->AddEntry(published[1]); // pheno estimate
       myleg->AddEntry(published[2]);
       myleg->AddEntry(published[3]);
       myleg->AddEntry(published[4]);
       myleg->AddEntry(published[5]);
 
+      // clean image
+      if ( draw_clean ) {
+	outname = Form("img/Limits/Limits.pdf");
+	myleg->Draw();
+	c1->SaveAs(outname);
+	draw_clean = false;
+      }
+      
+      dummy->SetTitle(Form("#muBooNE - %i-hit signal events, %i scatters",events[i2],nhits_vector[i3]));
       for ( int i1 = 0; i1 < limits.size(); i1++ ) {
 	limits[i1][i2][i3]->SetLineColor(kGreen+i1);
 	limits[i1][i2][i3]->SetLineWidth(5);
@@ -292,7 +302,6 @@ void MultiDraw(std::vector<TGraph * > published, std::vector<std::vector<std::ve
 	limits[i1][i2][i3]->Draw("L");
 	myleg->AddEntry(limits[i1][i2][i3]);
       }
-
       outname = Form("img/Limits/Limits_loop-thresholds_%ievents_%ihits.pdf",events[i2],nhits_vector[i3]);
       myleg->Draw();
       c1->SaveAs(outname);
